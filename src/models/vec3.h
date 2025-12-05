@@ -1,6 +1,5 @@
 #pragma once
-#include <cmath>
-#include <ostream>
+
 
 class vec3 {
     public:
@@ -33,9 +32,9 @@ class vec3 {
     }
 
     vec3& operator/=(const vec3& other) {
-        e[0] *= other.e[0];
-        e[1] *= other.e[1];
-        e[2] *= other.e[2];
+        e[0] /= other.e[0];
+        e[1] /= other.e[1];
+        e[2] /= other.e[2];
         return *this;
     }
 

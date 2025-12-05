@@ -1,4 +1,5 @@
 #pragma once
+
 #include "vec3.h"
 
 //using same class for vec3 and color since fun is the same, might lead to some misconceptions but who cares
