@@ -19,3 +19,4 @@ inline double degrees_to_radians(const double deg) {
 #include "models/color.h"
 #include "models/vec3.h"
 #include "models/ray.h"
+#include "models/interval.h"
