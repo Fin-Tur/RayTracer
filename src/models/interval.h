@@ -2,27 +2,40 @@
 
 #include "../rtweekend.h"
 
-class interval {
-    public: 
+class interval
+{
+public:
     double min, max;
 
     interval() : min(+infinity), max(-infinity) {}
     interval(double minimum, double maximum) : min(minimum), max(maximum) {}
 
-    double size() const {
-        return max-min;
+    double size() const
+    {
+        return max - min;
     }
 
-    bool contains(double val) const {
+    bool contains(double val) const
+    {
         return min <= val && val <= max;
     }
 
-    bool surrounds(double val) const {
+    bool surrounds(double val) const
+    {
         return min < val && val < max;
     }
 
-    static const interval empty, universe;
+    double clamp(double x) const {
+        if (min > x) {
+            return min;
+        }
+        if(max < x){
+            return max;
+        }
+        return x;
+    }
 
+    static const interval empty, universe;
 };
 
 const interval interval::empty = interval();

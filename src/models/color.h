@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vec3.h"
+#include "interval.h"
 
 //using same class for vec3 and color since fun is the same, might lead to some misconceptions but who cares
 using color = vec3;
@@ -11,10 +12,10 @@ void write_color(std::ostream& out, const color& pixel_color){
     auto g = pixel_color.y();
     auto b = pixel_color.z();
 
-    const int rbyte = static_cast<int>(255.999 * r);
-    const int gbyte = static_cast<int>(255.999 * g);
-    const int bbyte = static_cast<int>(255.999 * b);
-
+    static const interval intensity(0.000, 0.999);
+    int rbyte = (256 * intensity.clamp(r));
+    int gbyte = (256 * intensity.clamp(g));
+    int bbyte = (256 * intensity.clamp(b));
     out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
     
 }
