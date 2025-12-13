@@ -18,6 +18,7 @@ int main() {
         cam.image_width = 400;
         cam.samples_per_pixel = 100;
         cam.render(world);
+        cam.max_depth = 50;
         
     return 0;
 }
