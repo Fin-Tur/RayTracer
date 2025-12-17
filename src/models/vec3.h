@@ -53,7 +53,7 @@ class vec3 {
 
     bool near_zero() const {
         auto s = 1e-8;
-        return (std::fabs(e[0] < s) && std::fabs(e[1] < s) && std::fabs(e[2] < s));
+        return (std::fabs(e[0]) < s && std::fabs(e[1]) < s && std::fabs(e[2]) < s);
     }
     
 
@@ -111,6 +111,15 @@ inline vec3 random_unit_vector() {
         auto lensq = p.length_squared();
         if(lensq > 1e-160 && lensq <= 1){
             return p / std::sqrt(lensq);
+        }
+    }
+}
+
+inline vec3 random_in_unit_disk(){
+    while (true){
+        auto p = vec3(random_double(-1, 1), random_double(-1, 1), 0);
+        if (p.length_squared() < 1){
+            return p;
         }
     }
 }
