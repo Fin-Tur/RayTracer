@@ -1,6 +1,20 @@
 #pragma once
 
-struct tile {
-    int num;
-    float p0 ,p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15;
-};
+#include "../utils/camera.h"
+
+namespace tiles{
+
+    //width, height
+    static int multiplier[2];
+
+    struct tile
+    {
+        int num;
+        color rgb[256];
+    };
+
+    void calculate_tile_placement (const camera* cam){
+        tiles::multiplier[0] = cam->image_width / 16;
+        tiles::multiplier[1] = (cam->image_width / cam->aspect_ratio) / 16;
+    }
+}

@@ -39,7 +39,19 @@ class camera {
         std::clog << "\nDone.\n";
   }
 
-  private:
+  ray get_ray(int i, int j) const
+  {
+    // Construct a camera ray origninating from the defocus disk and directed at randomly samples point around the pixel location i,j
+    auto offset = sample_square();
+    auto pixel_sample = pixel00_loc + ((i + offset.x()) * pixel_delta_u) + ((j + offset.y()) * pixel_delta_v);
+
+    auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
+    auto ray_direction = pixel_sample - ray_origin;
+
+    return ray(ray_origin, ray_direction);
+  }
+
+  //private: //Temporary accessing everything for thread debugging
 
   int image_height; //Rendered image hieght
   point3 center;    //Camera center
