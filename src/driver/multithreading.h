@@ -5,30 +5,76 @@
 #include <atomic>
 #include <thread>
 
-namespace worker_threads {
+class concurrency_driver {
 
-    static std::vector<tiles::tile> rgbs;
-    static int num_threads = std::thread::hardware_concurrency();
-    static size_t num_tiles;
-    static std::vector<std::thread> workers(num_threads-1);
+    public:
+        concurrency_driver(const camera* camera, int tile_size_sqrt = 16, int num_threads = std::thread::hardware_concurrency()){
+            this->cam = camera;
+            this->num_threads = num_threads;
+            tiles::calculate_tile_placement(this->t_ctx, cam, tile_size_sqrt);
+            this->num_tiles = t_ctx.tiles_in_column * t_ctx.tiles_in_row;
+            this->num_pixels = (cam->image_width * cam->image_height);
+            this->frame_buffer.resize(num_pixels);
+            this->workers.resize(this->num_threads);
+        }
+
+        ~concurrency_driver() = default;
+
+        void start_rendering(const hittable &world){
+            tile_id.store(0);
+
+            for (auto &worker : workers){
+                worker = std::thread([this, &world](){
+                int current_tile;
+                while((current_tile = get_next_tile_id()) < num_tiles){
+                    render_tile(current_tile, world);
+                } });
+            }
+
+            for (auto &worker : workers){
+                if (worker.joinable())
+                    worker.join();
+            }
+        }
+
+        void print_rgbs(std::ostream &out){
+            auto* fb = frame_buffer.data();
+            out << "P3\n"<< cam->image_width << " " << cam->image_height << "\n255\n";
+            for (size_t j = 0; j < cam->image_height; j++){
+                for (size_t i = 0; i < cam->image_width; i++){
+                    auto pixel = j*cam->image_width + i;
+                    color& c = fb[pixel];
+                    write_color(out, c);
+                }
+            }
+        }
+
+
+    private:
+
+    const camera* cam;
+    tiles::tile_ctx t_ctx;
+    std::vector<color> frame_buffer;
+    int num_threads; 
+    size_t num_tiles;
+    size_t num_pixels;
+    std::vector<std::thread> workers;
     std::atomic<int> tile_id{0};
-
-    static const camera* cam = nullptr;
+    
 
     int get_next_tile_id(){
         return tile_id.fetch_add(1);
     }
 
-    void render_tile(int n, const hittable& world){
-        tiles::tile curr = {n};
-        int pixel_counter = -1;
-        int width_start = (n % tiles::tiles_in_row) * tiles::size_sqrt;
-        int height_start = (n / tiles::tiles_in_row) * tiles::size_sqrt;
-        for (int j = height_start; j < height_start + tiles::size_sqrt; j++){
-            for (int i = width_start; i < width_start + tiles::size_sqrt; i++){
-                pixel_counter++;
-                if(j >= static_cast<int>(cam->image_width / cam->aspect_ratio) || i >= cam->image_width){
-                    curr.rgb[pixel_counter] = {-1, -1, -1};
+   void render_tile(int n, const hittable &world){
+        color* fb = frame_buffer.data();
+
+        int width_start = (n % t_ctx.tiles_in_row) * t_ctx.size_sqrt;
+        int height_start = (n / t_ctx.tiles_in_row) * t_ctx.size_sqrt;
+        for (size_t j = height_start; j < height_start + t_ctx.size_sqrt; j++){
+            for (size_t i = width_start; i < width_start + t_ctx.size_sqrt; i++){
+                size_t pixel = j*cam->image_width + i;
+                if (j >= cam->image_height || i >= cam->image_width){
                     continue;
                 }
                 color pixel_color(0, 0, 0);
@@ -36,48 +82,8 @@ namespace worker_threads {
                     ray r = cam->get_ray(i, j);
                     pixel_color += cam->ray_color(r, cam->max_depth, world);
                 }
-                curr.rgb[pixel_counter] = cam->pixel_samples_scale * pixel_color;
-                //write_color(std::cout, cam->pixel_samples_scale * pixel_color);
-            }
-        }
-        worker_threads::rgbs[n] = curr;
-    }
-
-    void start_rendering(const camera &camera, const hittable& world)
-    {
-        worker_threads::cam = &camera;
-        tiles::calculate_tile_placement(&camera);
-
-        size_t n_pixel = (cam->image_width * (cam->image_width/cam->aspect_ratio));
-        worker_threads::num_tiles = tiles::tiles_in_column * tiles::tiles_in_row;
-        rgbs.resize(num_tiles);
-
-        tile_id.store(0);
-
-        for(auto& worker : workers){
-            worker = std::thread([&world]() {
-                int current_tile;
-                while((current_tile = get_next_tile_id()) < num_tiles){
-                    std::clog << "Rendering tile " << current_tile << " / " << num_tiles << "\n" << std::flush;
-                    render_tile(current_tile, world);
-                }
-            });
-        }
-
-        for(auto& worker : workers){
-            if(worker.joinable()) worker.join();
-        }
-        
-    }
-
-    void print_rgbs(std::ostream& out){
-        out << "P3\n" << cam->image_width << " " << cam->image_height << "\n255\n";
-        for(int rows = 0; rows < tiles::tiles_in_row; rows++){
-            for(int i = 0; i < tiles::size_sqrt; i++){
-                for(int column = 0; column < tiles::tiles_in_column; column++){
-                    //WTF
+                fb[pixel] = cam->pixel_samples_scale * pixel_color;
                 }
             }
         }
-    }
-}
+};

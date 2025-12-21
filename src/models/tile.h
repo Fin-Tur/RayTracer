@@ -4,19 +4,15 @@
 
 namespace tiles{
 
-    static int size_sqrt;
-    static int tiles_in_row;
-    static int tiles_in_column;
-
-    struct tile
-    {
-        int num;
-        color rgb[256];
+    struct tile_ctx{
+        int size_sqrt;
+        int tiles_in_row;
+        int tiles_in_column;
     };
 
-    void calculate_tile_placement (const camera* cam, int tile_size = 16){
-        size_sqrt = tile_size;
-        tiles_in_row = (cam->image_width + tile_size - 1) / tile_size;
-        tiles_in_column = ((cam->image_width / cam->aspect_ratio) + tile_size - 1) / tile_size;
+    inline void calculate_tile_placement (tile_ctx& ctx, const camera* cam, int tile_size){
+        ctx.size_sqrt = tile_size;
+        ctx.tiles_in_row = (cam->image_width + tile_size - 1) / tile_size;
+        ctx.tiles_in_column = (cam->image_height + tile_size - 1) / tile_size;
         }
 }

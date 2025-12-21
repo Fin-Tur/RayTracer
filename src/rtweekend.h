@@ -10,6 +10,10 @@
 const double infinity = std::numeric_limits<double>::infinity();
 const double pi = 3.1415926535897932385;
 
+thread_local std::uniform_real_distribution<double> distritubtion(0.0, 1.0);
+thread_local std::mt19937 gen;
+    
+
 // Utility funcs
 inline double degrees_to_radians(const double deg)
 {
@@ -18,8 +22,6 @@ inline double degrees_to_radians(const double deg)
 
 inline double random_double()
 {
-    static std::uniform_real_distribution<double> distritubtion(0.0, 1.0);
-    static std::mt19937 gen;
     return distritubtion(gen);
 }
 

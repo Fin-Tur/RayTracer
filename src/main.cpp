@@ -6,6 +6,8 @@
 #include "utils/camera.h"
 #include "driver/multithreading.h"
 
+#include<memory>
+
 int main() {
 
         //World
@@ -63,7 +65,7 @@ int main() {
 
         cam.aspect_ratio = 16.0 / 9.0;
         cam.image_width = 400;
-        cam.samples_per_pixel = 10;
+        cam.samples_per_pixel = 100;
         cam.max_depth = 50;
 
         cam.vfov = 20;
@@ -75,8 +77,10 @@ int main() {
         cam.focus_dist = 10.0;
 
         cam.initialize();
-        worker_threads::start_rendering(cam, world);
-        worker_threads::print_rgbs(std::cout);
+        
+        concurrency_driver cd(&cam);
+        cd.start_rendering(world);
+        cd.print_rgbs(std::cout);
 
         return 0;
 }
