@@ -5,6 +5,7 @@
 #include "hittables/sphere.h"
 #include "utils/camera.h"
 #include "driver/multithreading.h"
+#include "driver/performance.h"
 
 #include<memory>
 
@@ -65,7 +66,7 @@ int main() {
 
         cam.aspect_ratio = 16.0 / 9.0;
         cam.image_width = 400;
-        cam.samples_per_pixel = 100;
+        cam.samples_per_pixel = 50;
         cam.max_depth = 50;
 
         cam.vfov = 20;
@@ -77,10 +78,17 @@ int main() {
         cam.focus_dist = 10.0;
 
         cam.initialize();
-        
         concurrency_driver cd(&cam);
         cd.start_rendering(world);
         cd.print_rgbs(std::cout);
+        
+        /*auto times = performance_tests::compare_render_functions(
+                [&cam](const hittable& world) {cam.render(world);},
+                [&cd](const hittable& world){cd.start_rendering(world);},
+                 world);
 
+        std::clog << "Time normal: " << times.first << "\n" << "Time concurrency: " << times.second;
+        */
+        
         return 0;
 }

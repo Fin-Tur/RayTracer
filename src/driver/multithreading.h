@@ -4,6 +4,7 @@
 #include "../models/tile.h"
 #include <atomic>
 #include <thread>
+#include <iostream>
 
 class concurrency_driver {
 
@@ -29,6 +30,12 @@ class concurrency_driver {
                 while((current_tile = get_next_tile_id()) < num_tiles){
                     render_tile(current_tile, world);
                 } });
+            }
+
+            int current_progress;
+            while((current_progress = get_current_tile_id()) < num_tiles){
+                std::clog << "\rRendering: " << int((float(current_progress)/num_tiles)*100) << "% "  << std::flush;   
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
 
             for (auto &worker : workers){
@@ -64,6 +71,10 @@ class concurrency_driver {
 
     int get_next_tile_id(){
         return tile_id.fetch_add(1);
+    }
+
+    int get_current_tile_id(){
+        return tile_id.load();
     }
 
    void render_tile(int n, const hittable &world){
