@@ -62,33 +62,26 @@ int main() {
         auto material3 = std::make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
         world.add(std::make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-        camera cam;
+        std::shared_ptr<camera> cam = std::make_shared<camera>();
 
-        cam.aspect_ratio = 16.0 / 9.0;
-        cam.image_width = 400;
-        cam.samples_per_pixel = 50;
-        cam.max_depth = 50;
+        cam->aspect_ratio = 16.0 / 9.0;
+        cam->image_width = 400;
+        cam->samples_per_pixel = 50;
+        cam->max_depth = 50;
 
-        cam.vfov = 20;
-        cam.lookfrom = point3(13, 2, 3);
-        cam.lookat = point3(0, 0, 0);
-        cam.vup = vec3(0, 1, 0);
+        cam->vfov = 20;
+        cam->lookfrom = point3(13, 2, 3);
+        cam->lookat = point3(0, 0, 0);
+        cam->vup = vec3(0, 1, 0);
 
-        cam.defocus_angle = 0.6;
-        cam.focus_dist = 10.0;
+        cam->defocus_angle = 0.6;
+        cam->focus_dist = 10.0;
 
-        cam.initialize();
-        concurrency_driver cd(&cam);
+        cam->initialize();
+
+        concurrency_driver cd(cam);
         cd.start_rendering(world);
         cd.print_rgbs(std::cout);
-        
-        /*auto times = performance_tests::compare_render_functions(
-                [&cam](const hittable& world) {cam.render(world);},
-                [&cd](const hittable& world){cd.start_rendering(world);},
-                 world);
-
-        std::clog << "Time normal: " << times.first << "\n" << "Time concurrency: " << times.second;
-        */
         
         return 0;
 }

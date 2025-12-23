@@ -10,7 +10,7 @@ namespace tiles{
         int tiles_in_column;
     };
 
-    inline void calculate_tile_placement (tile_ctx& ctx, const camera* cam, int tile_size){
+    inline void calculate_tile_placement (tile_ctx& ctx, const std::shared_ptr<camera> cam, int tile_size){
         ctx.size_sqrt = tile_size;
         ctx.tiles_in_row = (cam->image_width + tile_size - 1) / tile_size;
         ctx.tiles_in_column = (cam->image_height + tile_size - 1) / tile_size;

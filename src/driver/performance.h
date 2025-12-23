@@ -3,13 +3,15 @@
 #include <functional>
 #include <concepts>
 #include <chrono>
+#include <memory>
 #include "../rtweekend.h"
 #include "../utils/camera.h"
+#include "renderer.h"
 
 //Returns 
 
 namespace performance_tests{
-
+    
     template<typename F>
     concept render_function = requires(F f, const hittable& world){
         f(world);
@@ -31,6 +33,12 @@ namespace performance_tests{
     
         return std::make_pair<>(time_f, time_g);
     }
-    
-    //template<typename f, typename g>
+
+    auto compare_render_functions(std::unique_ptr<renderer> r1, std::unique_ptr<renderer> r2, const hittable& world) -> std::pair<uint64_t, uint64_t>{
+        return compare_render_functions(
+            [&r1, &world](const hittable&) { r1->start_rendering(world); },
+            [&r2, &world](const hittable&) { r2->start_rendering(world); },
+            world
+        );
+    }
 }
