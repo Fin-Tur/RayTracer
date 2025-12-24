@@ -6,8 +6,12 @@
 #include "utils/camera.h"
 #include "driver/multithreading.h"
 #include "driver/performance.h"
+#include "driver/base_renderer.h"
+#include "api/cli.h"
 
 #include<memory>
+
+
 
 int main() {
 
@@ -66,7 +70,7 @@ int main() {
 
         cam->aspect_ratio = 16.0 / 9.0;
         cam->image_width = 400;
-        cam->samples_per_pixel = 50;
+        cam->samples_per_pixel = 10;
         cam->max_depth = 50;
 
         cam->vfov = 20;
@@ -79,9 +83,7 @@ int main() {
 
         cam->initialize();
 
-        concurrency_driver cd(cam);
-        cd.start_rendering(world);
-        cd.print_rgbs(std::cout);
+        cli cli();
         
         return 0;
 }

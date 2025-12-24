@@ -15,8 +15,6 @@ class concurrency_driver : public renderer{
             this->num_threads = num_threads;
             tiles::calculate_tile_placement(this->t_ctx, cam, tile_size_sqrt);
             this->num_tiles = t_ctx.tiles_in_column * t_ctx.tiles_in_row;
-            this->num_pixels = (cam->image_width * cam->image_height);
-            this->frame_buffer.resize(num_pixels);
             this->workers.resize(this->num_threads);
         }
 
@@ -49,7 +47,6 @@ class concurrency_driver : public renderer{
         tiles::tile_ctx t_ctx;
         int num_threads; 
         size_t num_tiles;
-        size_t num_pixels;
         std::vector<std::thread> workers;
         std::atomic<int> tile_id{0};
         

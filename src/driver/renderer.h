@@ -19,8 +19,14 @@ class renderer {
         }
     }
 
+    void empty_frame_buffer(){
+        frame_buffer.clear();
+    }
+
     protected:
-    renderer(const std::shared_ptr<camera>& camera) : cam(camera) {}
+    renderer(const std::shared_ptr<camera>& camera) : cam(camera) {
+        frame_buffer.resize(cam->image_height*cam->image_width);
+    }
     
     const std::shared_ptr<camera> cam;
     std::vector<color> frame_buffer;
