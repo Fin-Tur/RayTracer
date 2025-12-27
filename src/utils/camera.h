@@ -7,6 +7,8 @@
 class camera {
   public:
 
+    camera() = default;
+
    //image
     double aspect_ratio = 1.0; //Ratio of image width over height
     int image_width = 100; 

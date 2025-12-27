@@ -6,14 +6,16 @@ class base_renderer : public renderer{
 
     public:
 
-    base_renderer(const std::shared_ptr<camera> camera): renderer(camera) {}
+    base_renderer(const camera* const camera): renderer(camera) {}
 
     void start_rendering(const hittable& world) override{
         auto* fb = frame_buffer.data();
+        int progress;
         for(size_t j = 0; j < cam->image_height; j++){
             for(size_t i = 0; i < cam->image_width; i++){
-                if(j%50 == 0 || i%50 == 0){
-                    std::clog << "\rRendering: " << (int)((float)cam->image_height*cam->image_width/(j*cam->image_width + i)) << "% " << std::flush;
+                if((j * cam->image_width + i) % 1000 == 0){
+                    progress = (int)((float)(j * cam->image_width + i) / (cam->image_height * cam->image_width) * 100);
+                    print_progress(progress);
                 }
                 color pixel_color(0,0,0);
                 for(int sample = 0; sample < cam->samples_per_pixel; sample++){
@@ -23,6 +25,7 @@ class base_renderer : public renderer{
                 fb[j*cam->image_width + i] = pixel_color;
             }
         }
+        std::clog << GREEN << "\rRendering: 100% |==========| " << RESET << std::flush;
     }
 
 };

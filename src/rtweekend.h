@@ -12,6 +12,11 @@ const double pi = 3.1415926535897932385;
 
 thread_local std::uniform_real_distribution<double> distritubtion(0.0, 1.0);
 thread_local std::mt19937 gen;
+
+const std::string RED = "\033[31m";
+const std::string YELLOW = "\033[33m";  
+const std::string GREEN = "\033[32m";
+const std::string RESET = "\033[0m"; 
     
 
 // Utility funcs

@@ -9,10 +9,11 @@
 namespace config{
 
     struct cli_config{
-        std::shared_ptr<renderer> renderer;
-        std::shared_ptr<camera> cam;
-        std::shared_ptr<hittable> scene;
+        renderer* renderer;
+        camera* cam;
+        hittable* scene;
         std::filesystem::path dst;
+        bool initialized;
     };
 
     inline int config_set(cli_config& c) noexcept{
@@ -25,6 +26,7 @@ namespace config{
 
     inline bool read_config(std::filesystem::path src){
         //TODO
+        return false;
     }
     
 }

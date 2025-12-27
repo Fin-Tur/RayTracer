@@ -1,5 +1,10 @@
 #pragma once
 #include "../utils/camera.h"
+#include "../rtweekend.h"
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <thread>
 
 class renderer {
 
@@ -24,11 +29,29 @@ class renderer {
     }
 
     protected:
-    renderer(const std::shared_ptr<camera>& camera) : cam(camera) {
+
+    renderer(const camera* const camera) : cam(camera) {
         frame_buffer.resize(cam->image_height*cam->image_width);
     }
+
+    void print_progress(int progress){
+        std::ostringstream ss;
+        std::string color;
+        ss << "\rRendering :" << std::setw(3) << progress << "% ";
+        if(progress < 40){
+            color = RED;
+        }else if(progress < 80){
+            color = YELLOW;
+        }else{
+            color = GREEN;
+        }
+        ss << color << "|" 
+        << std::string(progress/10, '=') << std::string(10-progress/10, ' ') << "|";
+        std::clog << ss.str() << std::flush;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
     
-    const std::shared_ptr<camera> cam;
+    const camera* const cam;
     std::vector<color> frame_buffer;
 
 };

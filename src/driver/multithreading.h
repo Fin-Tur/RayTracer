@@ -6,14 +6,16 @@
 #include <atomic>
 #include <thread>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 class concurrency_driver : public renderer{
 
     public:
 
-        concurrency_driver(const std::shared_ptr<camera> camera, int tile_size_sqrt = 16, int num_threads = std::thread::hardware_concurrency()) : renderer(camera){
+        concurrency_driver(const camera* const camera, int tile_size_sqrt = 16, int num_threads = std::thread::hardware_concurrency()) : renderer(camera){
             this->num_threads = num_threads;
-            tiles::calculate_tile_placement(this->t_ctx, cam, tile_size_sqrt);
+            tiles::calculate_tile_placement(this->t_ctx, camera, tile_size_sqrt);
             this->num_tiles = t_ctx.tiles_in_column * t_ctx.tiles_in_row;
             this->workers.resize(this->num_threads);
         }
@@ -30,10 +32,10 @@ class concurrency_driver : public renderer{
             }
 
             int current_progress;
-            while((current_progress = get_current_tile_id()) < num_tiles){
-                std::clog << "\rRendering: " << int((float(current_progress)/num_tiles)*100) << "% "  << std::flush;   
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            while((current_progress = get_current_tile_id()) <= num_tiles){
+                print_progress(int((float(current_progress)/num_tiles)*100));
             }
+            std::clog << GREEN << "\rRendering: " << std::setw(3) << "100 % |==========|" << RESET;
 
             for (auto &worker : workers){
                 if (worker.joinable())

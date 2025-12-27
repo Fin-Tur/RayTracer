@@ -7,13 +7,19 @@
 
 class hittable_list : public hittable {
     public:
-    std::vector<std::shared_ptr<hittable>> objects;
+    std::vector<hittable*> objects;
 
     hittable_list() {}
-    hittable_list(const std::shared_ptr<hittable> object) { add(object) ;}
+    hittable_list(const hittable* object) { add(object) ;}
+
+    ~hittable_list() {
+        for(hittable* h : objects){
+            delete(h);
+        }
+    }
 
     void clear() { objects.clear(); }
-    void add(std::shared_ptr<hittable> obj) { objects.emplace_back(obj); }
+    void add(const hittable* obj) { objects.emplace_back(obj); }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override{
         hit_record temp_rec;
