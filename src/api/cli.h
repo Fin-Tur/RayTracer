@@ -5,6 +5,7 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include "../driver/multithreading.h"
 #include "../driver/base_renderer.h"
@@ -13,17 +14,31 @@
 
 class cli {
 
-    cli() = default;
-
+    public:
     ~cli() {
-
+        delete(con.cam);
+        delete(con.scene);
     }
 
-    config::cli_config con;
+    int run(int argc, char* argv[]){
+        std::string command = argv[1];
+        std::transform(command.begin(), command.end(), command.begin(), ::tolower);
+        if (dispatch_map.contains(command)) {
+            return dispatch_map.at(command)(argc, argv);
+        } else {
+            std::cerr << "[Error] Unknown command: " << command << std::endl;
+            help();
+            return 1;
+        }
+    }
+
+
     
     private:
 
-    std::map<std::string, std::function<int(int args, char* argv[])>> f_map = {
+    config::cli_config con;
+
+    std::map<std::string, std::function<int(int args, char* argv[])>> dispatch_map = {
         {"-help", [this](int args, char* argv[]) {
             help();
             return 0;
@@ -31,6 +46,10 @@ class cli {
         {"-set--renderer", [this](int args, char* argv[]) {
             if(args != 2) return 1;
             return set_renderer(argv);
+        }},
+        {"-render", [this](int args, char* argv[]){
+            //if(args != 2) return 1;
+            return render(argv);
         }}
     };
 
@@ -50,7 +69,10 @@ class cli {
 
     int initialize(){
         try{
-            if(!reader::read_config("C:/Users/f.willems/config.trt", con)) return 1;
+            if(!reader::read_config(con)){
+                std::clog << "\n[Error] Could not read config.trt!";
+                return 1;
+            } 
             this->con.initialized = true;
             return 0;
         }catch(...){
@@ -61,6 +83,7 @@ class cli {
     }
 
     int render(char* argv[]){
+        initialize();
         if(!this->con.initialized){
             std::clog << "[Error] RayTracer is not initialized!\n";
             return 1;
@@ -68,7 +91,7 @@ class cli {
         try{
             std::clog << "\nStarting to render: ...";
             this->con.renderer->start_rendering(*this->con.scene);
-            std::ofstream of(argv[1]);
+            std::ofstream of(argv[2]);
             if(!of.is_open()) std::clog << "[Error] Couldnt open dst path!\n";
             std::clog << "\nPrintig RGBs!";
             this->con.renderer->print_rgbs(of);

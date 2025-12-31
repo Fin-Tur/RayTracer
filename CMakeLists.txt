@@ -20,4 +20,5 @@ add_executable(RayTracer
      src/driver/multithreading.h
      src/driver/performance.h
      src/api/cli.h
+        src/reader/reader.h
 )

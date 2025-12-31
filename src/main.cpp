@@ -11,9 +11,12 @@
 
 #include<memory>
 
+int main(int argc, char* argv[]){
+        cli* c = new cli();
+        return c->run(argc, argv);
+}
 
-
-int main() {
+/*int main() {
 
         //World
         hittable_list world;
@@ -93,5 +96,7 @@ int main() {
 
         delete(cam);
 
+        cli cli();
+
         return 0;
-}
+}*/

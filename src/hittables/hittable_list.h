@@ -10,7 +10,7 @@ class hittable_list : public hittable {
     std::vector<hittable*> objects;
 
     hittable_list() {}
-    hittable_list(const hittable* object) { add(object) ;}
+    hittable_list(hittable* object) { add(object) ;}
 
     ~hittable_list() {
         for(hittable* h : objects){
@@ -19,7 +19,7 @@ class hittable_list : public hittable {
     }
 
     void clear() { objects.clear(); }
-    void add(const hittable* obj) { objects.emplace_back(obj); }
+    void add(hittable* obj) { objects.emplace_back(obj); }
 
     bool hit(const ray& r, interval ray_t, hit_record& rec) const override{
         hit_record temp_rec;
