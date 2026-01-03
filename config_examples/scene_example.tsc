@@ -17,15 +17,15 @@ sphere (4,1,0) 1.0 metal (0.7,0.6,0.5) 0.0
 sphere (-1.5,0.2,0.5) 0.2 lambertian (0.8,0.3,0.3)
 sphere (-3,0.3,1.5) 0.3 metal (0.7,0.7,0.7) 0.0
 sphere (1.5,0.25,0.8) 0.25 dialetric 1.5
-sphere (-0.5,0.2,-0.5) 0.2 lambertian (0.2,0.6,0.8)
-sphere (3,0.3,-1) 0.3 metal (0.9,0.5,0.2) 0.2
-sphere (-2.5,0.2,-1.5) 0.2 lambertian (0.5,0.8,0.3)
-sphere (0.8,0.25,1.2) 0.25 metal (0.8,0.6,0.4) 0.1
-sphere (-1,0.3,-2) 0.3 dialetric 1.5
-sphere (2.5,0.2,1.8) 0.2 lambertian (0.7,0.2,0.7)
-sphere (1,0.2,-1.5) 0.2 metal (0.5,0.5,0.8) 0.3
-sphere (-3.5,0.25,0) 0.25 lambertian (0.9,0.7,0.4)
-sphere (3.5,0.2,-0.5) 0.2 metal (0.6,0.8,0.6) 0.0
-sphere (-0.8,0.3,2) 0.3 dialetric 1.5
-sphere (2,0.2,-2.5) 0.2 lambertian (0.3,0.3,0.8)
+sphere (-0.5,0.2,0.5) 0.2 lambertian (0.2,0.6,0.8)
+sphere (3,0.3,1.0) 0.3 metal (0.9,0.5,0.2) 0.2
+sphere (-2.5,0.2,0.5) 0.2 lambertian (0.5,0.8,0.3)
+sphere (0.8,0.25,2.2) 0.25 metal (0.8,0.6,0.4) 0.1
+sphere (-1,0.3,0) 0.3 dialetric 1.5
+sphere (2.5,0.2,2.8) 0.2 lambertian (0.7,0.2,0.7)
+sphere (1,0.2,0.5) 0.2 metal (0.5,0.5,0.8) 0.3
+sphere (-3.5,0.25,1.0) 0.25 lambertian (0.9,0.7,0.4)
+sphere (3.5,0.2,1.5) 0.2 metal (0.6,0.8,0.6) 0.0
+sphere (-0.8,0.3,3.0) 0.3 dialetric 1.5
+sphere (2,0.2,-0.5) 0.2 lambertian (0.3,0.3,0.8)
 

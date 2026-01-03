@@ -43,9 +43,9 @@ class cli {
             help();
             return 0;
         }},
-        {"-set--renderer", [this](int args, char* argv[]) {
-            if(args != 2) return 1;
-            return set_renderer(argv);
+        {"-scene--display", [this](int args, char* argv[]) {
+            if(args != 1) return 1;
+            return display_scene();
         }},
         {"-render", [this](int args, char* argv[]){
             //if(args != 2) return 1;
@@ -57,12 +57,10 @@ class cli {
 
     void help(){
         std::cout << "RayTracer Usage: "<<
-        "\nRayTraver -initialize" <<
         "\nRayTracer -render <dst>" << 
-        "\nRayTracer -set--scene <src.tsc>" << 
-        "\n              --cam <src.tcam>" <<
-        "\n              --renderer <concurrency/base>\n" <<
-        "\nRayTracer -config--display" <<
+        "\nRayTracer -scene--display" <<
+        "\n                 --erase" <<
+        "\nRayTracer -camera--display" <<
         "\n                 --erase" <<
         "\nRayTracer -help";
     }
@@ -100,38 +98,16 @@ class cli {
         return 0;
     }
 
-    //FIXME
-    int set_renderer(char* argv[]){
-        renderer* renderer;
-        if(argv[1] == "concurrency"){
-            renderer = new concurrency_driver(this->con.cam);
-        }else if(argv[1] == "base"){
-            renderer = new base_renderer(this->con.cam);
+    int display_scene(){
+        hittable* scene = reader::intern::read_scene("default_scene");
+        if(scene == nullptr){
+            std::clog << "[Error] Could not read default scene!\n";
+            return 1;
         }
-        this->con.r_renderer = renderer;
+        for(auto& obj : static_cast<hittable_list*>(scene)->objects){
+            std::clog << obj << "\n";
+        }
         return 0;
     }
-
-    int set_scene(char* argv[]){
-        //TODO
-        this->con.initialized = false;
-    }
-
-    int set_cam(char* argv[]){
-        //TODO
-        this->con.initialized = false;
-    }
-
-    int show_config(){
-        //TODO
-    }
-
-    int erase_config(){
-        //TODO
-        this->con.initialized = false;
-    }
-
-    int save_config() {
-        //TODO
-    }
+    
 };
