@@ -21,6 +21,7 @@ class concurrency_driver : public renderer{
         }
 
         void start_rendering(const hittable &world) override{
+            std::clog << "Starting concurrency rendering with " << num_threads << " threads and " << num_tiles << " tiles.\n";
             tile_id.store(0);
 
             for (auto &worker : workers){
@@ -35,7 +36,7 @@ class concurrency_driver : public renderer{
             while((current_progress = get_current_tile_id()) <= num_tiles){
                 print_progress(int((float(current_progress)/num_tiles)*100));
             }
-            std::clog << GREEN << "\rRendering: " << std::setw(3) << "100 % |==========|" << RESET;
+            std::clog << GREEN << "\rRendering: " << std::setw(3) << "100 % |==========|" << RESET << std::endl;
 
             for (auto &worker : workers){
                 if (worker.joinable())

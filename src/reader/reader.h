@@ -11,6 +11,7 @@
 #include <optional>
 #include <stdio.h>
 #include <fstream>
+#include <algorithm>
 
 namespace reader {
 
@@ -59,15 +60,12 @@ namespace reader {
 
         inline hittable* read_scene(std::filesystem::path src){
             if(!std::filesystem::is_regular_file(src) || src.extension() != ".tsc"){
-                std::clog << "extension or type";
                 return nullptr;
             } 
-            std::clog << src;
             try{
                 hittable_list* hit_list = new hittable_list;
                 std::ifstream f(src);
                 if(!f.is_open()){
-                    std::clog << "Not open";
                     return nullptr;
                 }
                 std::string line;
@@ -80,7 +78,9 @@ namespace reader {
                         //1
                         o.obj_form = form::f_sphere;
                         //2
-                        std::istringstream coord_stream(matches[2].str());
+                        std::string coords = matches[2].str();
+                        std::replace(coords.begin(), coords.end(), ',', ' ');
+                        std::istringstream coord_stream(coords);
                         double x, y, z;
                         coord_stream >> x >> y >> z;
                         o.cords = point3(x, y, z);
@@ -95,8 +95,10 @@ namespace reader {
                         if(o.obj_mat == mat::m_dialetric){
                             o.dialetric = std::stod(matches[5].str());
                         }else{
+                            std::string rgb_str = matches[5].str();
+                            std::replace(rgb_str.begin(), rgb_str.end(), ',', ' ');
                             char l_paren, r_paren;
-                            std::istringstream args_stream(matches[5].str());
+                            std::istringstream args_stream(rgb_str);
                             double r, g, b;
                             args_stream >> l_paren >> r >> g >> b >> r_paren;
                             o.rgb = color(r,g,b);
@@ -109,6 +111,7 @@ namespace reader {
                 return hit_list;
 
             }catch(...){
+                std::clog << "[Error] Exception while reading scene file!\n";
                 return nullptr;
             }
         }
@@ -144,8 +147,8 @@ namespace reader {
                     }else {
                         std::istringstream vec(attr);
                         double x, y, z;
-                        char l_paren, r_paren;
-                        vec >> l_paren >> x >> y >> z >> r_paren;
+                        char l_paren, r_paren, comma;
+                        vec >> l_paren >> x  >> comma >> y >> comma >> z >> r_paren;
                         if(obj == "lookfrom"){
                             cam->lookfrom = vec3(x, y, z);
                        }else if(obj == "lookat"){
@@ -163,7 +166,7 @@ namespace reader {
 
         inline renderer* read_renderer(std::string attr, config::cli_config& con){
             if(con.cam == nullptr){ return nullptr; }
-            delete(con.renderer);
+            delete(con.r_renderer);
             if(attr == "concurrency"){ return new concurrency_driver(con.cam); }
             if(attr == "base"){ return new base_renderer(con.cam); }
             return nullptr;
@@ -194,11 +197,11 @@ namespace reader {
                 char q_marks;
                 std::string obj, attr;
                 input >> obj >> q_marks >> attr >> q_marks;
-                if(obj == "Scene"){ config.scene = intern::read_scene(attr); std::clog << (config.scene != nullptr);}
-                else if(obj == "Cam") {config.cam = intern::read_camera(attr); (config.cam != nullptr);} //HERE !!!
-                else if(obj == "Renderer") {config.renderer = intern::read_renderer(attr, config); (config.renderer != nullptr);}
+                if(obj == "Scene"){ config.scene = intern::read_scene(attr);}
+                else if(obj == "Cam") {config.cam = intern::read_camera(attr); config.cam->initialize();}
+                else if(obj == "Renderer") {config.r_renderer = intern::read_renderer(attr, config);}
             }
-            return (config.scene != nullptr && config.cam != nullptr && config.renderer != nullptr);
+            return (config.scene != nullptr && config.cam != nullptr && config.r_renderer != nullptr);
         }catch(...){
             return false;
         }

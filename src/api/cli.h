@@ -76,7 +76,7 @@ class cli {
             this->con.initialized = true;
             return 0;
         }catch(...){
-            std::clog << "\n[Error] Could not read config.trt!";
+            std::clog << "\n[Error] Could not read Initialize!";
             return 1;
         }
 
@@ -89,16 +89,15 @@ class cli {
             return 1;
         }
         try{
-            std::clog << "\nStarting to render: ...";
-            this->con.renderer->start_rendering(*this->con.scene);
+            this->con.r_renderer->start_rendering(*this->con.scene);
             std::ofstream of(argv[2]);
             if(!of.is_open()) std::clog << "[Error] Couldnt open dst path!\n";
-            std::clog << "\nPrintig RGBs!";
-            this->con.renderer->print_rgbs(of);
-            std::clog << "\nDone!";
+            this->con.r_renderer->print_rgbs(of);
+            of.close();
         }catch(...){
             std::clog << "[Error] Oops, something went wrong!\n";
         }
+        return 0;
     }
 
     //FIXME
@@ -109,7 +108,7 @@ class cli {
         }else if(argv[1] == "base"){
             renderer = new base_renderer(this->con.cam);
         }
-        this->con.renderer = renderer;
+        this->con.r_renderer = renderer;
         return 0;
     }
 

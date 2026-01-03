@@ -13,6 +13,7 @@ class renderer {
     virtual void start_rendering(const hittable& world) = 0;
 
     void print_rgbs(std::ostream& out) {
+
         auto* fb = frame_buffer.data();
         out << "P3\n"<< cam->image_width << " " << cam->image_height << "\n255\n";
         for (size_t j = 0; j < cam->image_height; j++){
@@ -20,6 +21,7 @@ class renderer {
                 auto pixel = j*cam->image_width + i;
                 color& c = fb[pixel];
                 write_color(out, c);
+                
             }
         }
     }

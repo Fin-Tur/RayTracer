@@ -1,10 +1,10 @@
 aspect_ratio 1.77777
-image_width 400
-samples_per_pixel 1
+image_width 800
+samples_per_pixel 100
 max_depth 50
-vfov 20
-lookfrom (13 2 3)
-lookat (0 0 0)
-vup (0 1 0)
-defocus_angle 0.6
-focus_dist 10.0
+vfov 35
+lookfrom (13,2,3)
+lookat (0,0.5,-1)
+vup (0,1,0)
+defocus_angle 0.3
+focus_dist 14.0

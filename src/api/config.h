@@ -9,7 +9,7 @@
 namespace config{
 
     struct cli_config{
-        renderer* renderer;
+        renderer* r_renderer;
         camera* cam;
         hittable* scene;
         std::filesystem::path dst;
@@ -17,7 +17,7 @@ namespace config{
     };
 
     inline int config_set(cli_config& c) noexcept{
-        return (c.renderer!=nullptr && c.cam!=nullptr && c.scene!=nullptr && !c.dst.empty());
+        return (c.r_renderer!=nullptr && c.cam!=nullptr && c.scene!=nullptr && !c.dst.empty());
     }
 
     inline void save_config(cli_config& c){
