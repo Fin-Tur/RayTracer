@@ -4,7 +4,7 @@
 #include "hittables/hittable_list.h"
 #include "hittables/sphere.h"
 #include "utils/camera.h"
-#include "driver/multithreading.h"
+#include "driver/concurrency_driver.h"
 #include "driver/performance.h"
 #include "driver/base_renderer.h"
 #include "api/cli.h"
