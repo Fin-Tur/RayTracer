@@ -17,7 +17,7 @@ add_executable(RayTracer
      src/utils/camera.h
      src/driver/base_renderer.h
      src/driver/renderer.h
-     src/driver/multithreading.h
+     src/driver/concurrency_driver.h
      src/driver/performance.h
      src/api/cli.h
         src/reader/reader.h
