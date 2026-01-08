@@ -12,8 +12,7 @@
 #include<memory>
 
 int main(int argc, char* argv[]){
-        cli* c = new cli();
-        return c->run(argc, argv);
+        return cli::run(argc, argv);
 }
 
 /*int main() {

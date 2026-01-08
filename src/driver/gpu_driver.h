@@ -1,7 +1,11 @@
 #pragma once
 
 #ifdef __CUDACC__
-#define HD = __host__ __device__
+#define HD __host__ __device__
+#define D __device__
+#else
+#define HD
+#define D
 #endif
 
 #include "../rtweekend.h"
@@ -10,7 +14,7 @@
 
 namespace gpu {
 
-    struct scene{
+    HD struct scene{
         sphere* spheres;
         uint32_t sphere_count;
 
@@ -38,11 +42,12 @@ namespace gpu {
             float ir;
         };
 
-        inline double reflectance(double cosine, double refraction_index) const{
+        
+        D inline double reflectance(double cosine, double refraction_index) const{
         //Schlicks approx
         auto r0 = (1-refraction_index) / (1+refraction_index);
         r0 *= r0;
-        return r0 + (1-r0)*std::pow((1-cosine),5);
+        return r0 + (1-r0)*std::powf((1-cosine),5);
     }
     };
 
@@ -53,7 +58,8 @@ namespace gpu {
         bool front_face;
         uint32_t mat_id;  
 
-        inline void set_face_normal(const ray& r, const vec3& outward_normal){
+        
+        D inline void set_face_normal(const ray& r, const vec3& outward_normal){
         front_face = dot(r.direction(), outward_normal) < 0;
         normal = front_face ? outward_normal : -outward_normal;
         
@@ -61,7 +67,8 @@ namespace gpu {
 
     };
 
-    bool hit_sphere(const sphere& s, const ray& r, interval ray_t, hit_record& rec){
+    
+    D bool hit_sphere(const sphere& s, const ray& r, interval ray_t, hit_record& rec){
         point3 oc = r.origin() - s.center;
         auto a = r.direction().length_squared();
         auto h = dot(r.direction(), oc);
@@ -70,7 +77,7 @@ namespace gpu {
         auto discriminant = h*h -a*c;
         if (discriminant < 0) return false;
 
-        auto sqrtd = std::sqrt(discriminant);
+        auto sqrtd = std::sqrtf(discriminant);
         auto root = (-h - sqrtd) / a;
         if(!ray_t.surrounds(root)){
             root = (-h + sqrtd) / a;
@@ -86,7 +93,8 @@ namespace gpu {
         return true;
     }
 
-    bool hit_world(const scene& scene, const ray& ray, interval ray_t, hit_record& rec){
+    
+    D bool hit_world(const scene& scene, const ray& ray, interval ray_t, hit_record& rec){
         bool hit_anything = false;
         auto closest_so_far = ray_t.max;
         hit_record temp_rec;
@@ -101,18 +109,8 @@ namespace gpu {
         return hit_anything;
     }
 
-    bool scatter(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation){
-        switch(mat.type){
-            case lambertian:
-                return scatter_lambertian(mat, ray_in, rec, scattered, attentuation);
-            case dialetric:
-                return scatter_dialetric(mat, ray_in, rec, scattered, attentuation);
-            case metal:
-                return scatter_metal(mat, ray_in, rec, scattered, attentuation);
-        }
-    }
-
-    bool scatter_lambertian(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation){
+    
+    D bool scatter_lambertian(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation){
         vec3 direction = rec.normal + random_unit_vector();
         if(direction.near_zero()) direction = rec.normal;
         scattered = ray(rec.p, direction);
@@ -120,7 +118,7 @@ namespace gpu {
         return true;
     }
 
-    bool scatter_metal(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation){
+    D bool scatter_metal(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation){
         vec3 reflected = reflect(r_in.direction(), rec.normal);
         reflected = unit_vector(reflected) + (mat.fuzz * random_unit_vector());
         scattered = ray(rec.p, reflected);
@@ -128,14 +126,14 @@ namespace gpu {
         return dot(scattered.direction(), rec.normal) > 0;
     }
 
-    bool scatter_dialetric(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation){
+    D bool scatter_dialetric(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation){
         attentuation = color(1.0, 1.0, 1.0);
         double ri = rec.front_face ? (1.0/mat.ir) : mat.ir;
 
         vec3 unit_direction = unit_vector(r_in.direction());
 
         double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
-        double sin_theta = std::sqrt(1.0 - cos_theta*cos_theta);
+        double sin_theta = std::sqrtf(1.0 - cos_theta*cos_theta);
 
         bool cannot_refract = ri * sin_theta > 1.0;
         vec3 direction;
@@ -150,7 +148,20 @@ namespace gpu {
         return true;
     }
 
-    color ray_color(ray& r, int depth, scene& scene){
+    
+    D bool scatter(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation){
+        switch(mat.type){
+            case lambertian:
+                return scatter_lambertian(mat, ray_in, rec, scattered, attentuation);
+            case dialetric:
+                return scatter_dialetric(mat, ray_in, rec, scattered, attentuation);
+            case metal:
+                return scatter_metal(mat, ray_in, rec, scattered, attentuation);
+        }
+    }
+
+    
+    D color ray_color(ray& r, int depth, scene& scene){
 
         color accumulated = color(1.0, 1.0, 1.0);  //Maybe
         
@@ -176,10 +187,20 @@ namespace gpu {
         return color(0,0,0);
   }
 
+  namespace converting {
+    
+    HD bool build_gpu_kernel(camera* cam, hittable* world, scene& gpu_scene_out){
+
+        return true;
+    }
+
+  }
+
     /*
     ->NEXT
         ->converting methods 
         ->random_unit_vector (own RNG)
+        ->std:: out 
         ->Debug on CPU
         ->GPU Kernel
 

@@ -14,46 +14,6 @@
 
 namespace cli {
 
-    int run(int argc, char* argv[]){
-
-        config::cli_config con;
-
-        std::string command = argv[1];
-        std::transform(command.begin(), command.end(), command.begin(), ::tolower);
-        if (dispatch_map.contains(command)) {
-            return dispatch_map.at(command)(argc, argv, con);
-        } else {
-            std::cerr << "[Error] Unknown command: " << command << std::endl;
-            intern::help();
-            return 1;
-        }
-    };
-
-    bool clear(config::cli_config &con){
-        delete(con.cam);
-        delete(con.r_renderer);
-        delete(con.scene);
-    };
-
-    static const std::map<std::string, std::function<int(int args, char* argv[], config::cli_config &con)>> dispatch_map = {
-        {"-help", [&](int args, char* argv[], config::cli_config &con) {
-            intern::help();
-            return 0;
-        }},
-        {"-scene--display", [&](int args, char* argv[], config::cli_config &con) {
-            if(args != 1) return 1;
-            return intern::display_scene(con.scene);
-        }},
-        {"-render", [&](int args, char* argv[], config::cli_config &con){
-            if(args != 2) return 1;
-            return intern::render(argv, con);
-        }},
-        {"-run--test", [&](int args, char* argv[], config::cli_config &con){
-            if(args != 4) return 1;
-            return intern::run_test(args, argv, con.scene);
-        }}
-    };
-
     namespace intern {
 
         //Functions
@@ -83,7 +43,7 @@ namespace cli {
         };
 
         int render(char* argv[], config::cli_config &con){
-            intern::initialize(con);
+            initialize(con);
             if(!con.initialized){
                 std::clog << "[Error] RayTracer is not initialized!\n";
                 return 1;
@@ -100,7 +60,7 @@ namespace cli {
             return 0;
         };
 
-        int display_scene(hittable* scene){
+        int display_scene(){
             hittable* scene = reader::intern::read_scene("default_scene");
             if(scene == nullptr){
                 std::clog << "[Error] Could not read default scene!\n";
@@ -116,5 +76,47 @@ namespace cli {
             //TODO
         };
     }
+
+    const std::map<std::string, std::function<int(int args, char* argv[], config::cli_config &con)>> dispatch_map = {
+        {"-help", [](int args, char* argv[], config::cli_config &con) {
+            intern::help();
+            return 0;
+        }},
+        {"-scene--display", [](int args, char* argv[], config::cli_config &con) {
+            if(args != 1) return 1;
+            return intern::display_scene();
+        }},
+        {"-render", [](int args, char* argv[], config::cli_config &con){
+            if(args != 2) return 1;
+            return intern::render(argv, con);
+        }},
+        {"-run--test", [](int args, char* argv[], config::cli_config &con){
+            if(args != 4) return 1;
+            return intern::run_test(args, argv, con.scene);
+        }}
+    };
+
+    int run(int argc, char* argv[]){
+
+        config::cli_config con;
+
+        std::string command = argv[1];
+        std::transform(command.begin(), command.end(), command.begin(), ::tolower);
+        if (dispatch_map.contains(command)) {
+            return dispatch_map.at(command)(argc, argv, con);
+        } else {
+            std::cerr << "[Error] Unknown command: " << command << std::endl;
+            intern::help();
+            return 1;
+        }
+    };
+
+    bool clear(config::cli_config &con){
+        delete(con.cam);
+        delete(con.r_renderer);
+        delete(con.scene);
+    };
+
+    
     
 }
