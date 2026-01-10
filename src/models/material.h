@@ -25,6 +25,8 @@ class lambertian : public material {
         return true;
     } 
 
+    color get_albedo() const{ return albedo; }
+
     private:
     color albedo;
 };
@@ -40,6 +42,9 @@ class metal : public material {
         attentuation = albedo;
         return dot(scattered.direction(), rec.normal) > 0;
     }
+
+    color get_albedo() const { return albedo; }
+    double get_fuzz() const { return fuzz; }
 
     private:
     color albedo;
@@ -71,6 +76,9 @@ class dialectric : public material {
         scattered = ray(rec.p, direction);
         return true;
     }
+
+    color get_attentuation() const {return attentuation;}
+    double get_ri() const {return refraction_index;}
         
     private:
     color attentuation;

@@ -95,6 +95,15 @@ class camera {
     defocus_disk_v = v * defocus_radius;
   }
 
+  point3 get_center() const { return center; }
+  point3 get_pixel00_loc() const { return pixel00_loc; }
+  vec3 get_pixel_delta_u() const { return pixel_delta_u; }
+  vec3 get_pixel_delta_v() const { return pixel_delta_v; }
+  vec3 get_u() const { return u; }
+  vec3 get_v() const { return v; }
+  vec3 get_w() const { return w; }
+  vec3 get_defocus_disk_u() const { return defocus_disk_u; }
+  vec3 get_defocus_disk_v() const { return defocus_disk_v; }
 
   private: 
 
@@ -107,12 +116,12 @@ class camera {
   vec3 defocus_disk_u;
   vec3 defocus_disk_v;
 
-  vec3 sample_square() const {
+  HD vec3 sample_square() const {
     //Returns the vector to a random point in the [-.5, -.5] - [-5, .5] unit square
     return vec3(random_double() - 0.5, random_double() -0.5, 0);
   }
 
-  point3 defocus_disk_sample() const {
+  HD point3 defocus_disk_sample() const {
     auto p = random_in_unit_disk();
     return center + (p[0]*defocus_disk_u + p[1]*defocus_disk_v);
   }
