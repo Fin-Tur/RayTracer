@@ -1,5 +1,15 @@
 #pragma once
 
+#if defined(__CUDACC__) || defined(__HIP_PLATFORM_AMD__)
+#define HD __host__ __device__
+#define H __host__
+#define D __device__
+#else
+#define HD
+#define H
+#define D
+#endif
+
 #include "../rtweekend.h"
 
 class interval
@@ -7,8 +17,8 @@ class interval
 public:
     double min, max;
 
-    interval() : min(+infinity), max(-infinity) {}
-    interval(double minimum, double maximum) : min(minimum), max(maximum) {}
+    HD interval() : min(+infinity), max(-infinity) {}
+    HD interval(double minimum, double maximum) : min(minimum), max(maximum) {}
 
     double size() const
     {
@@ -20,7 +30,7 @@ public:
         return min <= val && val <= max;
     }
 
-    bool surrounds(double val) const
+    HD bool surrounds(double val) const
     {
         return min < val && val < max;
     }

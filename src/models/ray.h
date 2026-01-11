@@ -1,12 +1,18 @@
 #pragma once
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined(__HIP_PLATFORM_AMD__)
 #define HD __host__ __device__
+#define H __host__ 
+#define D __device__
+#include <hip/hip_runtime.h>
 #else
 #define HD
+#define H
+#define D
 #endif
 
 #include "vec3.h"
+
 
 class ray {
 

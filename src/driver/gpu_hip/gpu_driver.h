@@ -4,25 +4,32 @@
 #define HD __host__ __device__
 #define H __host__
 #define D __device__
+#include <hip/hip_runtime.h>
 #else
 #define HD
-#define D
 #define H
+#define D
 #endif
 
-#include "../rtweekend.h"
-#include "../models/ray.h"
-#include "../models/material.h"
-#include "../hittables/hittable.h"
-#include "../hittables/hittable_list.h"
-#include "../hittables/sphere.h"
-#include "../utils/camera.h"
+#include "../../rtweekend.h"
+#include "../../models/ray.h"
+#include "../../models/material.h"
+#include "../../hittables/hittable.h"
+#include "../../hittables/hittable_list.h"
+#include "../../hittables/sphere.h"
+#include "../../utils/camera.h"
 
 #include <algorithm>
 #include <iterator>
 #include <map>
 
+#include <typeinfo>
+
 namespace gpu {
+
+    // Forward declarations
+    struct sphere;
+    struct material;
 
     D struct scene{
         sphere* spheres;
@@ -31,7 +38,7 @@ namespace gpu {
         material* materials;
         uint32_t material_count;
 
-        camera cam;
+        camera cam;  // Als Wert, nicht Zeiger (wird später mit scene auf GPU kopiert)
 
         color* framebuffer;
         uint32_t width{}, height{};
@@ -99,6 +106,19 @@ namespace gpu {
             float ir;
         };
 
+        // Comparison operator für std::map
+        HD bool operator<(const material& other) const {
+            if(type != other.type) return type < other.type;
+            if(!(albedo == other.albedo)) {
+                if(albedo.x() != other.albedo.x()) return albedo.x() < other.albedo.x();
+                if(albedo.y() != other.albedo.y()) return albedo.y() < other.albedo.y();
+                return albedo.z() < other.albedo.z();
+            }
+            // Compare union basierend auf type
+            if(type == material_type::metal) return fuzz < other.fuzz;
+            if(type == material_type::dialetric) return ir < other.ir;
+            return false;
+        }
         
         D inline double reflectance(double cosine, double refraction_index) const{
             //Schlicks approx
@@ -130,7 +150,7 @@ namespace gpu {
     };
 
     
-    D bool hit_sphere(const sphere& s, const ray& r, interval ray_t, hit_record& rec){
+    D bool hit_sphere(const gpu::sphere& s, const ray& r, interval ray_t, hit_record& rec){
         point3 oc = r.origin() - s.center;
         auto a = r.direction().length_squared();
         auto h = dot(r.direction(), oc);

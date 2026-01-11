@@ -2,11 +2,17 @@
 
 #if defined(__CUDACC__) || defined(__HIP_PLATFORM_AMD__)
 #define HD __host__ __device__
+#define H __host__ 
+#define D __device__
+#include <hip/hip_runtime.h>
 #else
 #define HD
+#define H 
+#define D
 #endif
 
 #include "../rtweekend.h"
+
 
 
 class vec3 {
@@ -52,7 +58,7 @@ class vec3 {
 
     HD double length_squared() const {return e[0]*e[0] + e[1]*e[1] + e[2]*e[2]; }
 
-    HD double length() const {return std::sqrt(length_squared()); }
+    HD double length() const {return sqrtf(length_squared()); }
 
     static HD vec3 random(){
         return vec3(random_double(), random_double(), random_double());
@@ -64,7 +70,7 @@ class vec3 {
 
     HD bool near_zero() const {
         auto s = 1e-8;
-        return (std::fabs(e[0]) < s && std::fabs(e[1]) < s && std::fabs(e[2]) < s);
+        return (fabs(e[0]) < s && fabs(e[1]) < s && fabs(e[2]) < s);
     }
     
 
@@ -74,7 +80,7 @@ using point3 = vec3;
 
 //Vector utility fn's
 
-inline std::ostream& operator<<(std::ostream& out, const vec3& v){
+H inline std::ostream& operator<<(std::ostream& out, const vec3& v){
     return out << v[0] << ' ' << v[1] << ' ' << v[2];
 }
 
