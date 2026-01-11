@@ -48,6 +48,9 @@ namespace gpu {
         point3 center;
         float radius;
         uint32_t mat_id;
+
+        sphere(vec3 c, double r, unsigned m)
+        : center(c), radius(r), mat_id(m) {}
     };
 
     D vec3 random_unit_vector(rng::rng_state& rng) {

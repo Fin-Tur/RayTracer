@@ -8,10 +8,14 @@
 #include "driver/performance.h"
 #include "driver/base_renderer.h"
 #include "api/cli.h"
+#include "driver/gpu_hip/gpu_driver.h"
 
 #include<memory>
 
 int main(int argc, char* argv[]){
+        gpu::scene sc;
+        sc.sphere_count = 3;
+        std::clog << sc.sphere_count << '\n';
         return cli::run(argc, argv);
 }
 
