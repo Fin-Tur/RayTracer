@@ -75,7 +75,7 @@ namespace gpu{
             }
             scene_out.spheres = spheres.data();
             scene_out.materials = materials.data();
-            scene_out.cam = convert_camera(cam);
+            scene_out.cam = new gpu::camera(convert_camera(cam));
 
             return true;
         }
@@ -107,10 +107,11 @@ namespace gpu{
 
             scene_out.spheres = spheres.data();
             scene_out.materials = mats_vec.data();
-            scene_out.cam = convert_camera(cam);
+            scene_out.cam = new gpu::camera(convert_camera(cam));
             //TODO -> mem
             return true;
             }
+        return false;
         }
     }
 }

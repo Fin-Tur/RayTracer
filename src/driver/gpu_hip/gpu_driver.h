@@ -18,39 +18,62 @@
 #include "../../hittables/hittable_list.h"
 #include "../../hittables/sphere.h"
 #include "../../utils/camera.h"
+#include "rng__seeded.h"
 
 #include <algorithm>
 #include <iterator>
 #include <map>
-
 #include <typeinfo>
 
 namespace gpu {
 
-    // Forward declarations
     struct sphere;
     struct material;
+    struct camera;
 
-    D struct scene{
+    struct scene{
         sphere* spheres;
         uint32_t sphere_count;
 
         material* materials;
         uint32_t material_count;
 
-        camera cam;  // Als Wert, nicht Zeiger (wird später mit scene auf GPU kopiert)
+        camera* cam;
 
         color* framebuffer;
         uint32_t width{}, height{};
     };
 
-    HD struct sphere{
+    struct sphere{
         point3 center;
         float radius;
         uint32_t mat_id;
     };
 
-    HD struct camera{ 
+    D vec3 random_unit_vector(rng::rng_state& rng) {
+        while(true){
+            auto p = vec3::random_rng_range(rng,-1,1);
+            auto lensq = p.length_squared();
+            if(lensq > 1e-160 && lensq <= 1){
+                return p / sqrtf(lensq);
+            }
+        }
+    }
+
+    D vec3 random_in_unit_disk(rng::rng_state& rng){
+            while (true){
+                auto p = vec3(rng::next_double_range(rng, -1, 1), rng::next_double_range(rng, -1, 1), 0);
+                if (p.length_squared() < 1){
+                    return p;
+                }
+            }
+        }
+
+    D vec3 sample_square(rng::rng_state& rng){
+        return vec3(rng::next_double(rng) - 0.5, rng::next_double(rng) -0.5, 0);
+    }
+
+    struct camera{ 
         double aspect_ratio = 1.0;
         int image_width = 100; 
         int samples_per_pixel = 10; 
@@ -71,34 +94,30 @@ namespace gpu {
         vec3 defocus_disk_u;
         vec3 defocus_disk_v;
 
-        D inline ray get_ray(int i, int j) const{
-            auto offset = sample_square();
+        D inline ray get_ray(int i, int j, rng::rng_state& rng) const{
+            auto offset = sample_square(rng);
             auto pixel_sample = pixel00_loc + ((i+offset.x()) * pixel_delta_u) + ((j+offset.y()) * pixel_delta_v);
 
-            auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
+            auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample(rng);
             auto ray_direction = pixel_sample - ray_origin;
 
             return ray(ray_origin, ray_direction);
         }
 
-        D vec3 sample_square() const {
-            return vec3(random_double() - 0.5, random_double() -0.5, 0);
-        }
-
-        D point3 defocus_disk_sample() const {
-            auto p = random_in_unit_disk();
+        D point3 defocus_disk_sample(rng::rng_state& rng) const {
+            auto p = random_in_unit_disk(rng);
             return center + (p[0]*defocus_disk_u + p[1]*defocus_disk_v);
         }
     };
 
-    HD enum material_type{
+    enum material_type{
         metal,
         lambertian,
         dialetric
 
     };
 
-    HD struct material {
+    struct material {
         material_type type;
         color albedo;
         union{
@@ -148,7 +167,6 @@ namespace gpu {
     }
 
     };
-
     
     D bool hit_sphere(const gpu::sphere& s, const ray& r, interval ray_t, hit_record& rec){
         point3 oc = r.origin() - s.center;
@@ -192,23 +210,23 @@ namespace gpu {
     }
 
     
-    D bool scatter_lambertian(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation){
-        vec3 direction = rec.normal + random_unit_vector();
+    D bool scatter_lambertian(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation, rng::rng_state& rng){
+        vec3 direction = rec.normal + random_unit_vector(rng);
         if(direction.near_zero()) direction = rec.normal;
         scattered = ray(rec.p, direction);
         attentuation = mat.albedo;
         return true;
     }
 
-    D bool scatter_metal(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation){
+    D bool scatter_metal(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation, rng::rng_state& rng){
         vec3 reflected = reflect(r_in.direction(), rec.normal);
-        reflected = unit_vector(reflected) + (mat.fuzz * random_unit_vector());
+        reflected = unit_vector(reflected) + (mat.fuzz * random_unit_vector(rng));
         scattered = ray(rec.p, reflected);
         attentuation = mat.albedo;
         return dot(scattered.direction(), rec.normal) > 0;
     }
 
-    D bool scatter_dialetric(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation){
+    D bool scatter_dialetric(const material& mat, const ray& r_in, const hit_record& rec, ray& scattered, color& attentuation, rng::rng_state& rng){
         attentuation = color(1.0, 1.0, 1.0);
         double ri = rec.front_face ? (1.0/mat.ir) : mat.ir;
 
@@ -220,7 +238,7 @@ namespace gpu {
         bool cannot_refract = ri * sin_theta > 1.0;
         vec3 direction;
 
-        if(cannot_refract || mat.reflectance(cos_theta, ri) > random_double()){
+        if(cannot_refract || mat.reflectance(cos_theta, ri) > rng::next_double(rng)){
             direction = reflect(unit_direction, rec.normal);
         }else{
             direction = refract(unit_direction, rec.normal, ri);
@@ -231,19 +249,19 @@ namespace gpu {
     }
 
     
-    D bool scatter(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation){
+    D bool scatter(const material& mat, const ray& ray_in, const hit_record& rec, ray& scattered, color& attentuation, rng::rng_state& rng){
         switch(mat.type){
             case lambertian:
-                return scatter_lambertian(mat, ray_in, rec, scattered, attentuation);
+                return scatter_lambertian(mat, ray_in, rec, scattered, attentuation, rng);
             case dialetric:
-                return scatter_dialetric(mat, ray_in, rec, scattered, attentuation);
+                return scatter_dialetric(mat, ray_in, rec, scattered, attentuation, rng);
             case metal:
-                return scatter_metal(mat, ray_in, rec, scattered, attentuation);
+                return scatter_metal(mat, ray_in, rec, scattered, attentuation, rng);
         }
     }
 
     
-    D color ray_color(ray& r, int depth, scene& scene){
+    D color ray_color(ray& r, int depth, scene& scene, rng::rng_state& rng){
 
         color accumulated = color(1.0, 1.0, 1.0);  //Maybe
         
@@ -258,7 +276,7 @@ namespace gpu {
             }
             ray scattered;
             color attentuation;
-            if(scatter(scene.materials[rec.mat_id], r, rec, scattered, attentuation)){
+            if(scatter(scene.materials[rec.mat_id], r, rec, scattered, attentuation, rng)){
                 accumulated *= attentuation;
                 depth--;
                 r = scattered;
@@ -283,109 +301,15 @@ namespace gpu {
 
 namespace gpu_converting {
 
-    H gpu::material convert_material(material* mat){
-        gpu::material gpu_mat;
-        if(auto* m = dynamic_cast<const metal*>(mat)){
-            gpu_mat.type = gpu::material_type::metal;
-            gpu_mat.fuzz = m->get_fuzz();
-            gpu_mat.albedo = m->get_albedo();
-        }else if(auto* m = dynamic_cast<const lambertian*>(mat)){
-            gpu_mat.type = gpu::material_type::lambertian;
-            gpu_mat.albedo = m->get_albedo();
-        }else if(auto* m = dynamic_cast<const dialectric*>(mat)){
-            gpu_mat.type = gpu::material_type::dialetric;
-            gpu_mat.ir = m->get_ri();
-            gpu_mat.albedo = m->get_attentuation();
-        }
-        return gpu_mat;
-    }
+    H gpu::material convert_material(material* mat);
 
-    H gpu::camera convert_camera(camera* cam){
-        cam->initialize();
-        return {cam->aspect_ratio,
-                cam->image_width,
-                cam->samples_per_pixel,
-                cam->max_depth,
-                cam->vfov,
-                cam->lookfrom,
-                cam->lookat,
-                cam->vup,
-                cam->defocus_angle,
-                cam->focus_dist,
-                cam->image_height,
-                cam->pixel_samples_scale,
-                cam->get_center(),
-                cam->get_pixel00_loc(),
-                cam->get_pixel_delta_u(),
-                cam->get_pixel_delta_v(),
-                cam->get_u(),
-                cam->get_v(),
-                cam->get_w(),
-                cam->get_defocus_disk_u(),
-                cam->get_defocus_disk_v()
-                };
-    }
+    H gpu::camera convert_camera(camera* cam);
     
     //Trade off lesser GPU Memory Bandwith to longer setup runtime through unique materials list and std::find
     //worth till ~250 mats
-    H bool build_gpu_scene_small(hittable* world, camera* cam, gpu::scene& scene_out){
-        if(typeid(*world) == typeid(hittable_list)){
-            auto* list = static_cast<hittable_list*>(world);
-            std::vector<gpu::sphere> spheres;
-            spheres.reserve(list->objects.size());
-            std::vector<gpu::material> materials;
-            for(auto& obj : list->objects){
-                if(auto* m = dynamic_cast<const sphere*>(obj)){
-                    gpu::material mat = convert_material(m->get_material());
-                    auto it = std::find(materials.begin(), materials.end(), mat);
-                    if(it == materials.end()){
-                        materials.emplace_back(mat);
-                        spheres.emplace_back(m->get_center(), m->get_radius(), materials.size()-1);
-                    }else{
-                        spheres.push_back(gpu::sphere{m->get_center(), (float)m->get_radius(), (uint32_t)std::distance(materials.begin(), it)});
-                    }
-                }
-
-            }
-            scene_out.spheres = spheres.data();
-            scene_out.materials = materials.data();
-            scene_out.cam = convert_camera(cam);
-
-            return true;
-        }
-        return false;
-    }
+    H bool build_gpu_scene_small(hittable* world, camera* cam, gpu::scene& scene_out);
 
     //Set version worth from ~250mats above
-        H bool build_gpu_scene_large(hittable* world, camera* cam, gpu::scene& scene_out){
-        if(typeid(*world) == typeid(hittable_list)){
-            auto* list = static_cast<hittable_list*>(world);
-            std::vector<gpu::sphere> spheres;
-            spheres.reserve(list->objects.size());
-            std::map<gpu::material, uint32_t> materials;
-            uint16_t size;
-            for(auto& obj : list->objects){
-                if(auto* m = dynamic_cast<const sphere*>(obj)){
-                    size = materials.size();
-                    gpu::material gpu_m = convert_material(m->get_material());
-                    auto [it, inserted] = materials.try_emplace(gpu_m, materials.size());
-                    spheres.emplace_back(m->get_center(), m->get_radius(), it->second);
-                }
-            }
-            std::vector<gpu::material> mats_vec;
-            mats_vec.reserve(materials.size());
-
-            for(auto& [mat, idx] : materials){
-                mats_vec[idx] = mat;
-            }
-
-            scene_out.spheres = spheres.data();
-            scene_out.materials = mats_vec.data();
-            scene_out.cam = convert_camera(cam);
-            //TODO -> mem
-            return true;
-        }
-        return false;
-    }
+    H bool build_gpu_scene_large(hittable* world, camera* cam, gpu::scene& scene_out);
 
   }

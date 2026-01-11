@@ -12,6 +12,7 @@
 #endif
 
 #include "../rtweekend.h"
+#include "../driver/gpu_hip/rng__seeded.h"
 
 
 
@@ -60,18 +61,27 @@ class vec3 {
 
     HD double length() const {return sqrtf(length_squared()); }
 
-    static HD vec3 random(){
+    static H vec3 random(){
         return vec3(random_double(), random_double(), random_double());
     }
 
-    static HD vec3 random(double min, double max){
+    static D vec3 random_rng(rng::rng_state& rng){
+        return vec3(rng::next_double(rng), rng::next_double(rng), rng::next_double(rng));
+    }
+
+    static H vec3 random(double min, double max){
         return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+    }
+
+    static D vec3 random_rng_range(rng::rng_state& rng, double min, double max){
+        return vec3(rng::next_double_range(rng, min, max), rng::next_double_range(rng, min, max), rng::next_double_range(rng, min, max));
     }
 
     HD bool near_zero() const {
         auto s = 1e-8;
         return (fabs(e[0]) < s && fabs(e[1]) < s && fabs(e[2]) < s);
     }
+
     
 
 };
