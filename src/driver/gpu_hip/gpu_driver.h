@@ -27,6 +27,8 @@
 
 namespace gpu {
 
+    H void print_test();
+
     struct sphere;
     struct material;
     struct camera;

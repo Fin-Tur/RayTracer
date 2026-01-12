@@ -1,10 +1,10 @@
 #pragma once
 
-#if defined(__CUDACC__) || defined(__HIP_PLATFORM_AMD__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
+#include <hip/hip_runtime.h>
 #define HD __host__ __device__
 #define H __host__
 #define D __device__
-#include <hip/hip_runtime.h>
 #else
 #define HD
 #define H
@@ -12,7 +12,6 @@
 #endif
 
 #include <stdint.h>
-
 
 
 namespace rng{
@@ -23,7 +22,7 @@ namespace rng{
         uint32_t num;
     }rng_state;
 
-    HD void init_rng_state(rng_state& state, uint32_t tid){
+    inline HD void init_rng_state(rng_state& state, uint32_t tid){
         uint32_t x = tid;
         x = (x ^ 61u) ^ (x >> 16);
         x = x + (x << 3);
@@ -34,7 +33,7 @@ namespace rng{
     }
 
     //xorshift32
-    HD uint32_t next_int(rng_state& prev_state){
+    inline HD uint32_t next_int(rng_state& prev_state){
         uint32_t& x = prev_state.num;
         x ^= x << 13;
         x ^= x >> 17;
@@ -43,13 +42,13 @@ namespace rng{
         return x;
     }
 
-    HD double next_double(rng_state& prev_state){
+    inline HD double next_double(rng_state& prev_state){
         double r = (double)next_int(prev_state);
         prev_state.num = r;
         return r * (1.0/TWO_POW_32);
     }
 
-    HD double next_double_range(rng_state& prev_state, double min, double max){
+    inline HD double next_double_range(rng_state& prev_state, double min, double max){
         return min + (max-min) * next_double(prev_state);
     }
 

@@ -16,6 +16,7 @@ int main(int argc, char* argv[]){
         gpu::scene sc;
         sc.sphere_count = 3;
         std::clog << sc.sphere_count << '\n';
+        gpu::print_test();
         return cli::run(argc, argv);
 }
 

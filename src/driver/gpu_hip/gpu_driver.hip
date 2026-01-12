@@ -8,6 +8,12 @@
 #include "../../hittables/hittable_list.h"
 
 namespace gpu{
+
+    H void print_test(){
+        printf("test\n");
+        fflush(stdout);
+    }
+
     namespace converting{
         H gpu::material convert_material(::material* mat){
         gpu::material gpu_mat;

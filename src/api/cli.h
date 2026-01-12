@@ -74,6 +74,7 @@ namespace cli {
 
         int run_test(int args, char* argv[], hittable* scene){
             //TODO
+            return 1;
         };
     }
 
