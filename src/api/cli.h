@@ -116,6 +116,7 @@ namespace cli {
         delete(con.cam);
         delete(con.r_renderer);
         delete(con.scene);
+        return true;
     };
 
     

@@ -10,6 +10,8 @@ class renderer {
 
     public:
 
+    virtual ~renderer() = default;
+
     virtual void start_rendering(const hittable& world) = 0;
 
     void print_rgbs(std::ostream& out) {
