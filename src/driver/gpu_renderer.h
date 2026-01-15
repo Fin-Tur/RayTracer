@@ -14,13 +14,13 @@ class gpu_renderer : public renderer{
         gpu::scene scene;
         auto* world_converted = dynamic_cast<hittable_list*>(&world);
         if(world_converted->objects.size() > 50){
-            gpu_converting::build_gpu_scene_large(&world, this->cam, scene);
+            gpu::converting::build_gpu_scene_large(&world, this->cam, scene);
         }else{
-            gpu_converting::build_gpu_scene_small(&world, this->cam, scene);
+            gpu::converting::build_gpu_scene_small(&world, this->cam, scene);
         }
         gpu::launch_kernel(scene);
-        gpu_converting::extract_framebuffer(scene, fb);
-        gpu_converting::free_gpu_mem(scene);
+        gpu::converting::extract_framebuffer(scene, fb);
+        gpu::converting::free_gpu_mem(scene);
     }
 
 };

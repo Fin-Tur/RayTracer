@@ -40,7 +40,7 @@ namespace gpu {
         material* materials;
         uint32_t material_count;
 
-        camera* cam;  // Pointer statt Wert, da camera noch nicht vollständig definiert ist
+        camera* cam;
 
         color* framebuffer;
         uint32_t width{}, height{};
@@ -305,26 +305,24 @@ namespace gpu {
 
     /*
     ->NEXT
-        ->Debug on CPU
-        ->GPU Kernel
         ->BVH, Layout, divergence
     */
-
-}
-
-namespace gpu_converting {
+namespace converting {
 
         H void free_gpu_mem(gpu::scene& scene);
 
         H gpu::material convert_material(material* mat);
 
-        H void create_pod_cam(camera* cam, gpu::scene& scene_out);
+        H void create_pod_cam(::camera* cam, gpu::scene& scene_out);
         
-        H bool build_gpu_scene_small(hittable* world, camera* cam, gpu::scene& scene_out);
+        H bool build_gpu_scene_small(hittable* world, ::camera* cam, gpu::scene& scene_out);
 
-        H bool build_gpu_scene_large(hittable* world, camera* cam, gpu::scene& scene_out);
+        H bool build_gpu_scene_large(hittable* world, ::camera* cam, gpu::scene& scene_out);
 
-        H bool extract_framebuffer(gpu::scene& scene, color* fb); 
+        H bool extract_framebuffer(gpu::scene& scene, ::color* fb); 
 
     }
+}
+
+
 
