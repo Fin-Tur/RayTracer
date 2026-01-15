@@ -13,14 +13,14 @@ class concurrency_driver : public renderer{
 
     public:
 
-        concurrency_driver(const camera* const camera, int tile_size_sqrt = 16, int num_threads = std::thread::hardware_concurrency()) : renderer(camera){
+        concurrency_driver(camera* camera, int tile_size_sqrt = 16, int num_threads = std::thread::hardware_concurrency()) : renderer(camera){
             this->num_threads = num_threads;
             tiles::calculate_tile_placement(this->t_ctx, camera, tile_size_sqrt);
             this->num_tiles = t_ctx.tiles_in_column * t_ctx.tiles_in_row;
             this->workers.resize(this->num_threads);
         }
 
-        void start_rendering(const hittable &world) override{
+        void start_rendering(hittable &world) override{
             std::clog << "Starting concurrency rendering with " << num_threads << " threads and " << num_tiles << " tiles.\n";
             tile_id.store(0);
 

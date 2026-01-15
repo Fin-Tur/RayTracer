@@ -9,18 +9,19 @@
 #include "driver/base_renderer.h"
 #include "api/cli.h"
 #include "driver/gpu_hip/gpu_driver.h"
+#include "driver/gpu_renderer.h"
 
 #include<memory>
 
-int main(int argc, char* argv[]){
+/*int main(int argc, char* argv[]){
         gpu::scene sc;
         sc.sphere_count = 3;
         std::clog << sc.sphere_count << '\n';
         gpu::print_test();
         return cli::run(argc, argv);
-}
+}*/
 
-/*int main() {
+int main() {
 
         //World
         hittable_list world;
@@ -77,7 +78,7 @@ int main(int argc, char* argv[]){
 
         cam->aspect_ratio = 16.0 / 9.0;
         cam->image_width = 400;
-        cam->samples_per_pixel = 1;
+        cam->samples_per_pixel = 10;
         cam->max_depth = 50;
 
         cam->vfov = 20;
@@ -90,17 +91,20 @@ int main(int argc, char* argv[]){
 
         cam->initialize();
 
-        concurrency_driver cd(cam);
+        /*concurrency_driver cd(cam);
         cd.start_rendering(world);
+        cd.print_rgbs(std::cout);
         cd.empty_frame_buffer();
+        */
 
+        /*
         base_renderer br(cam);
         br.start_rendering(world);
-        br.empty_frame_buffer();
+        br.empty_frame_buffer();*/
 
-        delete(cam);
-
-        cli cli();
+        gpu_renderer gpu_renderer(cam);
+        gpu_renderer.start_rendering(world);
+        gpu_renderer.print_rgbs(std::cout);
 
         return 0;
-}*/
+}

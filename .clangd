@@ -1,0 +1,19 @@
+CompileFlags:
+  Add:
+    - -D__HIP_PLATFORM_AMD__=1
+    - -D__HIP_ROCclr__=1
+    - -DUSE_PROF_API=1
+    - -I/usr/lib64/rocm/include
+    - -I/usr/include/hip
+    - --cuda-gpu-arch=gfx1031
+  CompilationDatabase: build/
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+  
+# Suppress some common warnings in HIP code
+  ClangTidy:
+    Remove:
+      - bugprone-reserved-identifier
+      - readability-identifier-naming

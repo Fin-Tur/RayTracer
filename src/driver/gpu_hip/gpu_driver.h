@@ -40,7 +40,7 @@ namespace gpu {
         material* materials;
         uint32_t material_count;
 
-        camera* cam;
+        camera* cam;  // Pointer statt Wert, da camera noch nicht vollständig definiert ist
 
         color* framebuffer;
         uint32_t width{}, height{};
@@ -263,6 +263,7 @@ namespace gpu {
             case metal:
                 return scatter_metal(mat, ray_in, rec, scattered, attentuation, rng);
         }
+        return false;
     }
 
     
@@ -276,7 +277,7 @@ namespace gpu {
             if (!(hit_world(scene, r, interval(0.001, infinity), rec))){
                 vec3 unit_direction = unit_vector(r.direction());
                 auto a = 0.5*(unit_direction.y() + 1.0);
-                return accumulated * (1.0-a) * color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
+                return accumulated * ((1.0-a) * color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0));
 
             }
             ray scattered;
@@ -286,35 +287,44 @@ namespace gpu {
                 depth--;
                 r = scattered;
             }else{
-                break;
+            return color(0,0,0);
             }
         }
-        return color(0,0,0);
-  }
+        vec3 unit_direction = unit_vector(r.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return accumulated * ((1.0-a) * color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0));
+    }
+
+
+#if defined(__CUDACC__) || defined(__HIP_PLATFORM_AMD__)
+  __global__ void render_kernel(gpu::scene* scene);
+#endif
+
+  //Entry point
+  H void launch_kernel(gpu::scene& scene);
 
     /*
     ->NEXT
-        ->random_unit_vector (own RNG)
-        ->HIP commands etc (HIPmemcpy, ...)
         ->Debug on CPU
         ->GPU Kernel
         ->BVH, Layout, divergence
     */
 
-
 }
 
 namespace gpu_converting {
 
-    H gpu::material convert_material(material* mat);
+        H void free_gpu_mem(gpu::scene& scene);
 
-    H gpu::camera convert_camera(camera* cam);
-    
-    //Trade off lesser GPU Memory Bandwith to longer setup runtime through unique materials list and std::find
-    //worth till ~250 mats
-    H bool build_gpu_scene_small(hittable* world, camera* cam, gpu::scene& scene_out);
+        H gpu::material convert_material(material* mat);
 
-    //Set version worth from ~250mats above
-    H bool build_gpu_scene_large(hittable* world, camera* cam, gpu::scene& scene_out);
+        H void create_pod_cam(camera* cam, gpu::scene& scene_out);
+        
+        H bool build_gpu_scene_small(hittable* world, camera* cam, gpu::scene& scene_out);
 
-  }
+        H bool build_gpu_scene_large(hittable* world, camera* cam, gpu::scene& scene_out);
+
+        H bool extract_framebuffer(gpu::scene& scene, color* fb); 
+
+    }
+

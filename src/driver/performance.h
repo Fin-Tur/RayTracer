@@ -34,7 +34,7 @@ namespace performance_tests{
         return std::make_pair<>(time_f, time_g);
     }
 
-    auto compare_render_functions(renderer* r1, renderer* r2, const hittable& world) -> std::pair<uint64_t, uint64_t>{
+    auto compare_render_functions(renderer* r1, renderer* r2, hittable& world) -> std::pair<uint64_t, uint64_t>{
         return compare_render_functions(
             [r1, &world](const hittable&) { r1->start_rendering(world); r1->empty_frame_buffer(); },
             [r2, &world](const hittable&) { r2->start_rendering(world); r2->empty_frame_buffer(); },

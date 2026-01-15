@@ -12,7 +12,7 @@ class renderer {
 
     virtual ~renderer() = default;
 
-    virtual void start_rendering(const hittable& world) = 0;
+    virtual void start_rendering(hittable& world) = 0;
 
     void print_rgbs(std::ostream& out) {
 
@@ -34,7 +34,7 @@ class renderer {
 
     protected:
 
-    renderer(const camera* const camera) : cam(camera) {
+    renderer(camera* camera) : cam(camera) {
         frame_buffer.resize(cam->image_height*cam->image_width);
     }
 
@@ -55,7 +55,7 @@ class renderer {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     
-    const camera* const cam;
+    camera* cam;
     std::vector<color> frame_buffer;
 
 };

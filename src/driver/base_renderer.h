@@ -6,9 +6,9 @@ class base_renderer : public renderer{
 
     public:
 
-    base_renderer(const camera* const camera): renderer(camera) {}
+    base_renderer(camera* const camera): renderer(camera) {}
 
-    void start_rendering(const hittable& world) override{
+    void start_rendering(hittable& world) override{
         auto* fb = frame_buffer.data();
         int progress;
         for(size_t j = 0; j < cam->image_height; j++){

@@ -9,13 +9,58 @@
 
 namespace gpu{
 
+    __global__ void render_kernel(gpu::scene* scene){
+        int x = blockIdx.x * blockDim.x + threadIdx.x;
+        int y = blockIdx.y * blockDim.y + threadIdx.y;
+        
+        if(x >= scene->width || y >= scene->height) return;
+        
+        uint32_t pixel_idx = y * scene->width + x;
+        rng::rng_state rng_state{};
+        rng::init_rng_state(rng_state, pixel_idx);
+        
+        color cl(0, 0, 0);
+        for(int i = 0; i < scene->cam->samples_per_pixel; ++i){
+            ray r = scene->cam->get_ray(x, y, rng_state);
+            cl += ray_color(r, scene->cam->max_depth, *scene, rng_state);
+        }
+        scene->framebuffer[pixel_idx] = cl / scene->cam->samples_per_pixel;
+    }
+
+    H void launch_kernel(gpu::scene& scene){
+        gpu::scene* d_scene;
+        hipMalloc(&d_scene, sizeof(gpu::scene));
+        hipMemcpy(d_scene, &scene, sizeof(gpu::scene), hipMemcpyHostToDevice);
+        
+        //Launch kernel with grid/block dimensions
+        dim3 blockSize(16, 16);  //16x16 threads per block
+        dim3 gridSize((scene.width + blockSize.x - 1) / blockSize.x, 
+                      (scene.height + blockSize.y - 1) / blockSize.y);
+        
+        hipLaunchKernelGGL(render_kernel, gridSize, blockSize, 0, 0, d_scene);
+        hipDeviceSynchronize();
+        
+        // Free device scene
+        hipFree(d_scene);
+    }
+
     H void print_test(){
         printf("test\n");
         fflush(stdout);
     }
 
-    namespace converting{
-        H gpu::material convert_material(::material* mat){
+}
+
+namespace gpu_converting{
+
+    void H free_gpu_mem(gpu::scene& scene){
+        hipFree(scene.framebuffer);
+        hipFree(scene.materials);
+        hipFree(scene.spheres);
+        hipFree(scene.cam);
+    }
+
+    H gpu::material convert_material(::material* mat){
         gpu::material gpu_mat;
         if(auto* m = dynamic_cast<const ::metal*>(mat)){
             gpu_mat.type = gpu::material_type::metal;
@@ -32,9 +77,16 @@ namespace gpu{
         return gpu_mat;
     }
 
-    H gpu::camera convert_camera(::camera* cam){
-        cam->initialize();
-        return {cam->aspect_ratio,
+    H void inline create_pod_cam(::camera* cam, gpu::scene& scene_out){
+        //Cam initialization done in cli/reader
+        scene_out.height = cam->image_height;
+        scene_out.width = cam->image_width;
+        hipMalloc(&scene_out.framebuffer, scene_out.height*scene_out.width*sizeof(color));
+        
+        // Allocate and initialize camera on device
+        gpu::camera* d_cam;
+        hipMalloc(&d_cam, sizeof(gpu::camera));
+        gpu::camera h_cam = {cam->aspect_ratio,
                 cam->image_width,
                 cam->samples_per_pixel,
                 cam->max_depth,
@@ -56,10 +108,12 @@ namespace gpu{
                 cam->get_defocus_disk_u(),
                 cam->get_defocus_disk_v()
                 };
+        hipMemcpy(d_cam, &h_cam, sizeof(gpu::camera), hipMemcpyHostToDevice);
+        scene_out.cam = d_cam;
     }
     
     //Trade off lesser GPU Memory Bandwith to longer setup runtime through unique materials list and std::find
-    //worth till ~250 mats
+    //worth till ~50 mats
     H bool build_gpu_scene_small(::hittable* world, ::camera* cam, gpu::scene& scene_out){
         if(typeid(*world) == typeid(::hittable_list)){
             auto* list = static_cast<::hittable_list*>(world);
@@ -79,16 +133,21 @@ namespace gpu{
                 }
 
             }
-            scene_out.spheres = spheres.data();
-            scene_out.materials = materials.data();
-            scene_out.cam = new gpu::camera(convert_camera(cam));
+            
+            create_pod_cam(cam, scene_out);
+            hipMalloc(&scene_out.spheres, spheres.size()*sizeof(gpu::sphere));
+            hipMalloc(&scene_out.materials, materials.size()*sizeof(gpu::material));
+            hipMemcpy(scene_out.spheres, spheres.data(), spheres.size()*sizeof(gpu::sphere), hipMemcpyHostToDevice);
+            hipMemcpy(scene_out.materials, materials.data(), materials.size()*sizeof(gpu::material), hipMemcpyHostToDevice);
+            scene_out.sphere_count = spheres.size();
+            scene_out.material_count = materials.size();
 
             return true;
         }
         return false;
     }
 
-    //Set version worth from ~250mats above
+    //Set version worth from ~50mats above
         H bool build_gpu_scene_large(::hittable* world, ::camera* cam, gpu::scene& scene_out){
         if(typeid(*world) == typeid(::hittable_list)){
             auto* list = static_cast<::hittable_list*>(world);
@@ -105,19 +164,27 @@ namespace gpu{
                 }
             }
             std::vector<gpu::material> mats_vec;
-            mats_vec.reserve(materials.size());
+            mats_vec.resize(materials.size());
 
             for(auto& [mat, idx] : materials){
                 mats_vec[idx] = mat;
-            }
+            }  
 
-            scene_out.spheres = spheres.data();
-            scene_out.materials = mats_vec.data();
-            scene_out.cam = new gpu::camera(convert_camera(cam));
-            //TODO -> mem
+            create_pod_cam(cam, scene_out);
+            hipMalloc(&scene_out.spheres, spheres.size()*sizeof(gpu::sphere));
+            hipMalloc(&scene_out.materials, mats_vec.size()*sizeof(gpu::material));
+            hipMemcpy(scene_out.spheres, spheres.data(), spheres.size()*sizeof(gpu::sphere), hipMemcpyHostToDevice);
+            hipMemcpy(scene_out.materials, mats_vec.data(), mats_vec.size()*sizeof(gpu::material), hipMemcpyHostToDevice);
+            scene_out.sphere_count = spheres.size();
+            scene_out.material_count = mats_vec.size();
+
             return true;
             }
         return false;
         }
+
+        H bool extract_framebuffer(gpu::scene& scene, color* fb){
+            return hipMemcpy(fb, scene.framebuffer, scene.height*scene.width*sizeof(color), hipMemcpyDeviceToHost);
+        }
+
     }
-}
