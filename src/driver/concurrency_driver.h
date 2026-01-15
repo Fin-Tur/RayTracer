@@ -9,11 +9,11 @@
 #include <sstream>
 #include <iomanip>
 
-class concurrency_driver : public renderer{
+class concurrency_renderer : public renderer{
 
     public:
 
-        concurrency_driver(camera* camera, int tile_size_sqrt = 16, int num_threads = std::thread::hardware_concurrency()) : renderer(camera){
+        concurrency_renderer(camera* camera, int tile_size_sqrt = 16, int num_threads = std::thread::hardware_concurrency()) : renderer(camera){
             this->num_threads = num_threads;
             tiles::calculate_tile_placement(this->t_ctx, camera, tile_size_sqrt);
             this->num_tiles = t_ctx.tiles_in_column * t_ctx.tiles_in_row;
@@ -35,6 +35,7 @@ class concurrency_driver : public renderer{
             int current_progress;
             while((current_progress = get_current_tile_id()) <= num_tiles){
                 print_progress(int((float(current_progress)/num_tiles)*100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             std::clog << GREEN << "\rRendering: " << std::setw(3) << "100 % |==========|" << RESET << std::endl;
 

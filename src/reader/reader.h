@@ -5,6 +5,7 @@
 #include "../api/config.h"
 #include "../driver/concurrency_driver.h"
 #include "../driver/base_renderer.h"
+#include "../driver/gpu_renderer.h"
 
 #include <regex>
 #include <filesystem>
@@ -167,8 +168,9 @@ namespace reader {
         inline renderer* read_renderer(std::string attr, config::cli_config& con){
             if(con.cam == nullptr){ return nullptr; }
             delete(con.r_renderer);
-            if(attr == "concurrency"){ return new concurrency_driver(con.cam); }
+            if(attr == "concurrency"){ return new concurrency_renderer(con.cam); }
             if(attr == "base"){ return new base_renderer(con.cam); }
+            if(attr == "gpu"){ return new gpu_renderer(con.cam); }
             return nullptr;
         }
     }

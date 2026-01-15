@@ -6,12 +6,14 @@
 #include "../../hittables/sphere.h"      
 #include "../../utils/camera.h"          
 #include "../../hittables/hittable_list.h"
+#include "../../models/tile.h"
+#include "../renderer.h"
 
 namespace gpu{
 
-    __global__ void render_kernel(gpu::scene* scene){
-        int x = blockIdx.x * blockDim.x + threadIdx.x;
-        int y = blockIdx.y * blockDim.y + threadIdx.y;
+    __global__ void render_kernel(gpu::scene* scene, int tile_offset_x, int tile_offset_y){
+        int x = blockIdx.x * blockDim.x + threadIdx.x + tile_offset_x;
+        int y = blockIdx.y * blockDim.y + threadIdx.y + tile_offset_y;
         
         if(x >= scene->width || y >= scene->height) return;
         
@@ -20,40 +22,45 @@ namespace gpu{
         rng::init_rng_state(rng_state, pixel_idx);
         
         color cl(0, 0, 0);
-        for(int i = 0; i < scene->cam->samples_per_pixel; ++i){
-            ray r = scene->cam->get_ray(x, y, rng_state);
-            cl += ray_color(r, scene->cam->max_depth, *scene, rng_state);
+        for(int i = 0; i < scene->cam.samples_per_pixel; ++i){
+            ray r = scene->cam.get_ray(x, y, rng_state);
+            cl += ray_color(r, scene->cam.max_depth, *scene, rng_state);
         }
-        scene->framebuffer[pixel_idx] = cl / scene->cam->samples_per_pixel;
+        scene->framebuffer[pixel_idx] = cl / scene->cam.samples_per_pixel;
     }
 
-    H void launch_kernel(gpu::scene& scene){
+    H void launch_kernel(gpu::scene& scene, tiles::tile_ctx t_ctx){
         gpu::scene* d_scene;
-        assert(hipMalloc(&d_scene, sizeof(gpu::scene)));
-        assert(hipMemcpy(d_scene, &scene, sizeof(gpu::scene), hipMemcpyHostToDevice));
+        assert(hipMalloc(&d_scene, sizeof(gpu::scene)) == hipSuccess);
+        assert(hipMemcpy(d_scene, &scene, sizeof(gpu::scene), hipMemcpyHostToDevice) == hipSuccess);
         
-        //Launch kernel with grid/block dimensions
-        dim3 blockSize(16, 16);  //16x16 threads per block
-        dim3 gridSize((scene.width + blockSize.x - 1) / blockSize.x, 
-                      (scene.height + blockSize.y - 1) / blockSize.y);
-        
-        hipLaunchKernelGGL(render_kernel, gridSize, blockSize, 0, 0, d_scene);
-        assert(hipDeviceSynchronize());
-        assert(hipFree(d_scene));
-    }
+        int total_tiles = t_ctx.tiles_in_column * t_ctx.tiles_in_row;
+        int current_tile = 0;
 
-    H void print_test(){
-        printf("test\n");
-        fflush(stdout);
+        dim3 blockSize(16, 16);
+        dim3 gridSize((t_ctx.size_sqrt + 15) / 16, 
+            (t_ctx.size_sqrt + 15) / 16);
+
+        for(int ty = 0; ty < t_ctx.tiles_in_column; ty++){
+            for(int tx = 0; tx < t_ctx.tiles_in_row; tx++){
+                int offset_x = tx*t_ctx.size_sqrt;
+                int offset_y = ty*t_ctx.size_sqrt;      
+                hipLaunchKernelGGL(render_kernel, gridSize, blockSize, 0, 0, d_scene, offset_x, offset_y);
+                current_tile++;
+                assert(hipDeviceSynchronize() == hipSuccess);
+                renderer::print_progress(int((float(current_tile)/total_tiles)*100));
+            }
+        }
+        assert(hipFree(d_scene) == hipSuccess);
+        std::clog << RESET << "\n" << std::flush;
     }
 
 namespace converting{
 
     void H free_gpu_mem(gpu::scene& scene){
-        assert(hipFree(scene.framebuffer));
-        assert(hipFree(scene.materials));
-        assert(hipFree(scene.spheres));
-        assert(hipFree(scene.cam));
+        assert(hipFree(scene.framebuffer) == hipSuccess);
+        assert(hipFree(scene.materials) == hipSuccess);
+        assert(hipFree(scene.spheres) == hipSuccess);
     }
 
     H gpu::material convert_material(::material* mat){
@@ -73,16 +80,14 @@ namespace converting{
         return gpu_mat;
     }
 
-    H void inline create_pod_cam(::camera* cam, gpu::scene& scene_out){
+    H gpu::camera inline create_pod_cam(::camera* cam, gpu::scene& scene_out){
         //Cam initialization done in cli/reader
         scene_out.height = cam->image_height;
         scene_out.width = cam->image_width;
-        assert(hipMalloc(&scene_out.framebuffer, scene_out.height*scene_out.width*sizeof(color)));
+        assert(hipMalloc(&scene_out.framebuffer, scene_out.height*scene_out.width*sizeof(color)) == hipSuccess);
         
         // Allocate and initialize camera on device
-        gpu::camera* d_cam;
-        assert(hipMalloc(&d_cam, sizeof(gpu::camera)));
-        gpu::camera h_cam = {cam->aspect_ratio,
+        gpu::camera gpu_cam = {cam->aspect_ratio,
                 cam->image_width,
                 cam->samples_per_pixel,
                 cam->max_depth,
@@ -104,8 +109,7 @@ namespace converting{
                 cam->get_defocus_disk_u(),
                 cam->get_defocus_disk_v()
                 };
-        assert(hipMemcpy(d_cam, &h_cam, sizeof(gpu::camera), hipMemcpyHostToDevice));
-        scene_out.cam = d_cam;
+        return gpu_cam;
     }
     
     //Trade off lesser GPU Memory Bandwith to longer setup runtime through unique materials list and std::find
@@ -131,10 +135,10 @@ namespace converting{
             }
             
             create_pod_cam(cam, scene_out);
-            assert(hipMalloc(&scene_out.spheres, spheres.size()*sizeof(gpu::sphere)));
-            assert(hipMalloc(&scene_out.materials, materials.size()*sizeof(gpu::material)));
-            assert(hipMemcpy(scene_out.spheres, spheres.data(), spheres.size()*sizeof(gpu::sphere), hipMemcpyHostToDevice));
-            assert(hipMemcpy(scene_out.materials, materials.data(), materials.size()*sizeof(gpu::material), hipMemcpyHostToDevice));
+            assert(hipMalloc(&scene_out.spheres, spheres.size()*sizeof(gpu::sphere))== hipSuccess);
+            assert(hipMalloc(&scene_out.materials, materials.size()*sizeof(gpu::material)) == hipSuccess);
+            assert(hipMemcpy(scene_out.spheres, spheres.data(), spheres.size()*sizeof(gpu::sphere), hipMemcpyHostToDevice) == hipSuccess);
+            assert(hipMemcpy(scene_out.materials, materials.data(), materials.size()*sizeof(gpu::material), hipMemcpyHostToDevice) == hipSuccess);
             scene_out.sphere_count = spheres.size();
             scene_out.material_count = materials.size();
 
@@ -166,11 +170,11 @@ namespace converting{
                 mats_vec[idx] = mat;
             }  
 
-            create_pod_cam(cam, scene_out);
-            assert(hipMalloc(&scene_out.spheres, spheres.size()*sizeof(gpu::sphere)));
-            assert(hipMalloc(&scene_out.materials, mats_vec.size()*sizeof(gpu::material)));
-            assert(hipMemcpy(scene_out.spheres, spheres.data(), spheres.size()*sizeof(gpu::sphere), hipMemcpyHostToDevice));
-            assert(hipMemcpy(scene_out.materials, mats_vec.data(), mats_vec.size()*sizeof(gpu::material), hipMemcpyHostToDevice));
+            scene_out.cam = create_pod_cam(cam, scene_out);
+            assert(hipMalloc(&scene_out.spheres, spheres.size()*sizeof(gpu::sphere)) == hipSuccess);
+            assert(hipMalloc(&scene_out.materials, mats_vec.size()*sizeof(gpu::material)) == hipSuccess);
+            assert(hipMemcpy(scene_out.spheres, spheres.data(), spheres.size()*sizeof(gpu::sphere), hipMemcpyHostToDevice) == hipSuccess);
+            assert(hipMemcpy(scene_out.materials, mats_vec.data(), mats_vec.size()*sizeof(gpu::material), hipMemcpyHostToDevice) == hipSuccess);
             scene_out.sphere_count = spheres.size();
             scene_out.material_count = mats_vec.size();
 

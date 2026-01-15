@@ -32,13 +32,7 @@ class renderer {
         frame_buffer.clear();
     }
 
-    protected:
-
-    renderer(camera* camera) : cam(camera) {
-        frame_buffer.resize(cam->image_height*cam->image_width);
-    }
-
-    void print_progress(int progress){
+    static void print_progress(int progress){
         std::ostringstream ss;
         std::string color;
         ss << "\rRendering :" << std::setw(3) << progress << "% ";
@@ -52,8 +46,15 @@ class renderer {
         ss << color << "|" 
         << std::string(progress/10, '=') << std::string(10-progress/10, ' ') << "|";
         std::clog << ss.str() << std::flush;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
     }
+
+    protected:
+
+    renderer(camera* camera) : cam(camera) {
+        frame_buffer.resize(cam->image_height*cam->image_width);
+    }
+
     
     camera* cam;
     std::vector<color> frame_buffer;

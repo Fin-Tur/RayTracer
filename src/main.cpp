@@ -77,8 +77,8 @@ int main() {
         camera* cam = new camera;
 
         cam->aspect_ratio = 16.0 / 9.0;
-        cam->image_width = 400;
-        cam->samples_per_pixel = 10;
+        cam->image_width = 700;
+        cam->samples_per_pixel = 400;
         cam->max_depth = 50;
 
         cam->vfov = 20;
@@ -91,7 +91,7 @@ int main() {
 
         cam->initialize();
 
-        /*concurrency_driver cd(cam);
+        /*concurrency_renderer cd(cam);
         cd.start_rendering(world);
         cd.print_rgbs(std::cout);
         cd.empty_frame_buffer();

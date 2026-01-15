@@ -14,6 +14,7 @@
 #include "../../rtweekend.h"
 #include "../../models/ray.h"
 #include "../../models/material.h"
+#include "../../models/tile.h"
 #include "../../hittables/hittable.h"
 #include "../../hittables/hittable_list.h"
 #include "../../hittables/sphere.h"
@@ -27,33 +28,8 @@
 
 namespace gpu {
 
-    H void print_test();
-
     struct sphere;
     struct material;
-    struct camera;
-
-    struct scene{
-        sphere* spheres;
-        uint32_t sphere_count;
-
-        material* materials;
-        uint32_t material_count;
-
-        camera* cam;
-
-        color* framebuffer;
-        uint32_t width{}, height{};
-    };
-
-    struct sphere{
-        point3 center;
-        float radius;
-        uint32_t mat_id;
-
-        sphere(vec3 c, double r, unsigned m)
-        : center(c), radius(r), mat_id(m) {}
-    };
 
     D vec3 random_unit_vector(rng::rng_state& rng) {
         while(true){
@@ -77,7 +53,7 @@ namespace gpu {
     D vec3 sample_square(rng::rng_state& rng){
         return vec3(rng::next_double(rng) - 0.5, rng::next_double(rng) -0.5, 0);
     }
-
+    
     struct camera{ 
         double aspect_ratio = 1.0;
         int image_width = 100; 
@@ -113,6 +89,28 @@ namespace gpu {
             auto p = random_in_unit_disk(rng);
             return center + (p[0]*defocus_disk_u + p[1]*defocus_disk_v);
         }
+    };
+
+    struct scene{
+        sphere* spheres;
+        uint32_t sphere_count;
+
+        material* materials;
+        uint32_t material_count;
+
+        camera cam;
+
+        color* framebuffer;
+        uint32_t width{}, height{};
+    };
+
+    struct sphere{
+        point3 center;
+        float radius;
+        uint32_t mat_id;
+
+        sphere(vec3 c, double r, unsigned m)
+        : center(c), radius(r), mat_id(m) {}
     };
 
     enum material_type{
@@ -301,7 +299,7 @@ namespace gpu {
 #endif
 
   //Entry point
-  H void launch_kernel(gpu::scene& scene);
+  H void launch_kernel(gpu::scene& scene, tiles::tile_ctx t_ctx);
 
     /*
     ->NEXT
@@ -313,7 +311,7 @@ namespace converting {
 
         H gpu::material convert_material(material* mat);
 
-        H void create_pod_cam(::camera* cam, gpu::scene& scene_out);
+        H gpu::camera create_pod_cam(::camera* cam, gpu::scene& scene_out);
         
         H bool build_gpu_scene_small(hittable* world, ::camera* cam, gpu::scene& scene_out);
 
