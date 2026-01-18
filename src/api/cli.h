@@ -34,6 +34,7 @@ namespace cli {
                     return 1;
                 } 
                 con.initialized = true;
+                std::cout <<"init";
                 return 0;
             }catch(...){
                 std::clog << "\n[Error] Could not read Initialize!";
@@ -84,11 +85,11 @@ namespace cli {
             return 0;
         }},
         {"-scene--display", [](int args, char* argv[], config::cli_config &con) {
-            if(args != 1) return 1;
+            if(args != 2) return 1;
             return intern::display_scene();
         }},
         {"-render", [](int args, char* argv[], config::cli_config &con){
-            if(args != 2) return 1;
+            if(args != 3) return 1;
             return intern::render(argv, con);
         }},
         {"-run--test", [](int args, char* argv[], config::cli_config &con){
@@ -100,7 +101,6 @@ namespace cli {
     int run(int argc, char* argv[]){
 
         config::cli_config con;
-
         std::string command = argv[1];
         std::transform(command.begin(), command.end(), command.begin(), ::tolower);
         if (dispatch_map.contains(command)) {

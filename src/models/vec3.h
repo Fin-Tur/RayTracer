@@ -118,6 +118,22 @@ HD inline vec3 operator/(const vec3& u, double t){
     return (1.0/t) * u;
 }
 
+HD inline vec3 vec_min(vec3& u, vec3& t){
+    return vec3{
+        fmin(u.x(), t.x()),
+        fmin(u.y(), t.y()),
+        fmin(u.z(), t.z()),
+    };
+}
+
+HD inline vec3 vec_max(vec3& u, vec3& t){
+    return vec3{
+        fmax(u.x(), t.x()),
+        fmax(u.y(), t.y()),
+        fmax(u.z(), t.z()),
+    };
+}
+
 HD inline double dot(const vec3& u, const vec3& t){
     return (u[0] * t[0] + u[1] * t[1] + u[2] * t[2]); 
 }

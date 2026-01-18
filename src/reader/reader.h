@@ -180,7 +180,7 @@ namespace reader {
      inline bool read_config(config::cli_config& config){
         std::ifstream env_file(".env");
         if(!env_file.is_open()) return false;
-        
+        std::cout << "Env open";
         std::string src_path;
         std::getline(env_file, src_path);
         env_file.close();

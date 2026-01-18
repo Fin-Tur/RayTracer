@@ -2,6 +2,8 @@
 
 #include "../rtweekend.h"
 
+struct bvh::aabb;
+
 class material;
 
 class hit_record {
@@ -23,4 +25,5 @@ class hittable {
     public:
     virtual ~hittable() = default;
     virtual bool hit(const ray& r, interval ray_t, hit_record& hit) const = 0;
+    virtual bvh::aabb get_aabb();
 };

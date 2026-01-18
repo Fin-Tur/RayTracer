@@ -13,15 +13,11 @@
 
 #include<memory>
 
-/*int main(int argc, char* argv[]){
-        gpu::scene sc;
-        sc.sphere_count = 3;
-        std::clog << sc.sphere_count << '\n';
-        gpu::print_test();
+int main(int argc, char* argv[]){
         return cli::run(argc, argv);
-}*/
+}
 
-int main() {
+/*int main() {
 
         //World
         hittable_list world;
@@ -91,20 +87,19 @@ int main() {
 
         cam->initialize();
 
-        /*concurrency_renderer cd(cam);
+        concurrency_renderer cd(cam);
         cd.start_rendering(world);
         cd.print_rgbs(std::cout);
         cd.empty_frame_buffer();
-        */
+        
 
-        /*
+        
         base_renderer br(cam);
         br.start_rendering(world);
-        br.empty_frame_buffer();*/
+        br.empty_frame_buffer();
 
         gpu_renderer gpu_renderer(cam);
         gpu_renderer.start_rendering(world);
         gpu_renderer.print_rgbs(std::cout);
-
-        return 0;
-}
+        
+}*/
