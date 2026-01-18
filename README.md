@@ -8,8 +8,9 @@ This project implements a ray tracer for rendering 3D scenes with realistic ligh
 
 ## Added Features
 
-- Basic ray tracing algorithm (Books 1 and now starting 2)
+- Basic ray tracing algorithm (Books 1)
 - Added multithreading for performance enhancement
-- Added Basic CLI and scene-camera data types to build once then use forever.
+- Added Basic CLI and scene-camera data types to build once then use forever
+- Added GPU Render support
 
 ## Getting Started
