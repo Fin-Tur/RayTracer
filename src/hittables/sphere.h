@@ -3,7 +3,7 @@
 #include "../rtweekend.h"
 #include "hittable.h"
 #include "../models/material.h"
-#include "../models/bvh.h"
+#include "../models/bvh/aabb.h"
 
 class sphere : public hittable {
     public:
@@ -36,7 +36,7 @@ class sphere : public hittable {
         return true;
     }
 
-    bvh::aabb get_aabb() override{
+    aabb get_aabb() override{
         float min_x = center.x() - radius;
         float max_x = center.x() + radius;
 

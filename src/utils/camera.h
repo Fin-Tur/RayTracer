@@ -3,6 +3,7 @@
 #include "../rtweekend.h"
 #include "../hittables/hittable.h"
 #include "../models/material.h"
+#include "../models/bvh/bvh.h"
 
 class camera {
   public:
@@ -60,7 +61,7 @@ class camera {
 
   color ray_color(const ray& r, int depth, const hittable& world) const {
 
-    color accumulated = color(1.0, 1.0, 1.0);  //Maybe
+    color accumulated = color(1.0, 1.0, 1.0);  //Maybehittable& world
     ray curr_ray = r;
         
         while(depth > 0){
@@ -84,6 +85,27 @@ class camera {
         }
         return {0,0,0};
 
+  }
+
+  color ray_color(const ray& r, int depth, bvh::node_4* node){
+    color accumulated = color(1.0, 1.0, 1.0);
+    ray curr_ray = r;
+
+    //Better traversal?
+
+    while(depth > 0){
+
+      hit_record rec;
+      if(!node->content.hit_box(curr_ray, 0.001, infinity)); // <- set node = parent.right and if node = root break;
+      if(node->is_leaf){
+        //check if ray hits <5 spheres inside aabb
+          //if yes, decrease depth and continue loop
+          //if not return background
+      }
+      //else set curr node = node->left and continue loop
+
+    }
+      return {0,0,0};
   }
 
    void initialize(){

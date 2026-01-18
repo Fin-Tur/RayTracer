@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "hittable.h"
+#include "../models/bvh/aabb.h"
 #include "../rtweekend.h"
 
 
@@ -34,6 +35,14 @@ class hittable_list : public hittable {
             }
         }
         return hit_anything;
+    }
+
+    aabb get_aabb() override{
+        aabb curr_content{point3{0, 0, 0}, point3{0, 0, 0}};
+        for(auto& obj : this->objects){
+            curr_content.include(obj->get_aabb());
+        }
+        return curr_content;
     }
 
 };
