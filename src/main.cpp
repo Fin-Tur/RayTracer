@@ -13,11 +13,11 @@
 
 #include<memory>
 
-int main(int argc, char* argv[]){
+/*int main(int argc, char* argv[]){
         return cli::run(argc, argv);
 }
-
-/*int main() {
+*/
+int main() {
 
         //World
         hittable_list world;
@@ -73,8 +73,8 @@ int main(int argc, char* argv[]){
         camera* cam = new camera;
 
         cam->aspect_ratio = 16.0 / 9.0;
-        cam->image_width = 700;
-        cam->samples_per_pixel = 400;
+        cam->image_width = 400;
+        cam->samples_per_pixel = 1;
         cam->max_depth = 50;
 
         cam->vfov = 20;
@@ -87,19 +87,18 @@ int main(int argc, char* argv[]){
 
         cam->initialize();
 
-        concurrency_renderer cd(cam);
+        /*concurrency_renderer cd(cam);
         cd.start_rendering(world);
         cd.print_rgbs(std::cout);
-        cd.empty_frame_buffer();
-        
-
+        cd.empty_frame_buffer();*/
         
         base_renderer br(cam);
         br.start_rendering(world);
         br.empty_frame_buffer();
 
+        /*
         gpu_renderer gpu_renderer(cam);
         gpu_renderer.start_rendering(world);
         gpu_renderer.print_rgbs(std::cout);
-        
-}*/
+        */
+}

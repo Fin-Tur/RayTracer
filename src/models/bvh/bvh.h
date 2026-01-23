@@ -1,7 +1,7 @@
 #pragma once
-#include "../rtweekend.h"
-#include "../hittables/hittable.h"
-#include "../hittables/hittable_list.h"
+#include "../../rtweekend.h"
+#include "../../hittables/hittable.h"
+#include "../../hittables/hittable_list.h"
 #include "aabb.h"
 
 
@@ -14,13 +14,6 @@ namespace bvh {
         node_4* n_right;
         bool is_leaf = false;
     };
-
-    inline node_4* construct_bvh_tree(hittable_list& list) {
-        node_4* root = new node_4;
-        bvh_tree_build_job(list, root);
-        return root;
-
-    }
 
     inline void bvh_tree_build_job(hittable_list& list, node_4* node){
 
@@ -62,6 +55,14 @@ namespace bvh {
         node->n_right = n2;
         bvh_tree_build_job(h1, n1);
         bvh_tree_build_job(h2, n2);
+
+    }
+
+    inline node_4* construct_bvh_tree(hittable* world) {
+        hittable_list* list = dynamic_cast<hittable_list*>(world);
+        node_4* root = new node_4;
+        bvh_tree_build_job(*list, root);
+        return root;
 
     }
 

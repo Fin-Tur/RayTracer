@@ -1,5 +1,6 @@
 #pragma once
 #include "renderer.h"
+#include "../models/bvh/bvh.h"
 
 
 class base_renderer : public renderer{
@@ -8,7 +9,8 @@ class base_renderer : public renderer{
 
     base_renderer(camera* const camera): renderer(camera) {}
 
-    void start_rendering(hittable& world) override{
+    void start_rendering(hittable& world1) override{
+        bvh::node_4* world = bvh::construct_bvh_tree(&world1);
         auto* fb = frame_buffer.data();
         int progress;
         for(size_t j = 0; j < cam->image_height; j++){

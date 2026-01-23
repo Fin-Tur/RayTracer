@@ -5,6 +5,8 @@
 #include "../models/material.h"
 #include "../models/bvh/bvh.h"
 
+#include <stack>
+
 class camera {
   public:
 
@@ -87,25 +89,58 @@ class camera {
 
   }
 
-  color ray_color(const ray& r, int depth, bvh::node_4* node){
+  color ray_color(const ray& r, int depth, bvh::node_4* root){
     color accumulated = color(1.0, 1.0, 1.0);
     ray curr_ray = r;
-
-    //Better traversal?
-
+    
     while(depth > 0){
-
       hit_record rec;
-      if(!node->content.hit_box(curr_ray, 0.001, infinity)); // <- set node = parent.right and if node = root break;
-      if(node->is_leaf){
-        //check if ray hits <5 spheres inside aabb
-          //if yes, decrease depth and continue loop
-          //if not return background
-      }
-      //else set curr node = node->left and continue loop
+      bool hit_anything = false;
+      double closest_so_far = infinity;
 
+      bvh::node_4* curr_n;
+      std::stack<bvh::node_4*> visited;
+      visited.push(root);
+
+      while(!visited.empty()){
+        curr_n = visited.top();
+        visited.pop();
+
+        if(!curr_n->content.hit_box(curr_ray, 0.001, closest_so_far)) continue;
+
+        if(curr_n->is_leaf){
+          for(auto& sph : curr_n->objects){
+            if(sph == nullptr) continue;
+            //sphere* sph = dynamic_cast<sphere*>(obj);
+            if(sph->hit(curr_ray, interval(0.001, closest_so_far), rec)){
+              hit_anything = true;
+              closest_so_far = rec.t;
+            }
+          }
+        }
+        if(curr_n->n_left!=nullptr) visited.push(curr_n->n_left);
+        if(curr_n->n_right!=nullptr) visited.push(curr_n->n_right);
+      }
+
+      if(hit_anything){
+        ray scattered;
+        color attentuation;
+        if(rec.mat->scatter(curr_ray, rec, attentuation, scattered)){
+        accumulated *= attentuation;
+        depth--;
+        curr_ray = scattered;
+        }else{
+          return color(0,0,0);
+        }
+      }else{
+        vec3 unit_direction = unit_vector(curr_ray.direction());
+        auto a = 0.5*(unit_direction.y() + 1.0);
+        return accumulated * ((1.0-a) * color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0));
+      }
     }
-      return {0,0,0};
+
+    return {0,0,0};
+        
   }
 
    void initialize(){
