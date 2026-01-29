@@ -109,14 +109,13 @@ class camera {
         if(!curr_n->content.hit_box(curr_ray, 0.001, closest_so_far)) continue;
 
         if(curr_n->is_leaf){
-          for(auto& sph : curr_n->objects){
-            if(sph == nullptr) continue;
-            //sphere* sph = dynamic_cast<sphere*>(obj);
-            if(sph->hit(curr_ray, interval(0.001, closest_so_far), rec)){
+          for(int i = 0; i<curr_n->obj_count; ++i){
+            if(curr_n->objects[i]->hit(curr_ray, interval(0.001, closest_so_far), rec)){
               hit_anything = true;
               closest_so_far = rec.t;
             }
           }
+          
         }
         if(curr_n->n_left!=nullptr) visited.push(curr_n->n_left);
         if(curr_n->n_right!=nullptr) visited.push(curr_n->n_right);

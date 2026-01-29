@@ -28,6 +28,7 @@ class base_renderer : public renderer{
             }
         }
         std::clog << GREEN << "\rRendering: 100% |==========| " << RESET << std::flush;
+        bvh::destroy_tree(world);
     }
 
 };

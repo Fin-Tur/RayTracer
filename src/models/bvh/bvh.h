@@ -9,23 +9,36 @@ namespace bvh {
 
     struct node_4 {
         aabb content;
-        hittable* objects[4];
-        node_4* n_left;
+        uint8_t obj_start = 0;
+        uint8_t obj_count = 0;
+        node_4* n_left; //int left_child + flache liste
         node_4* n_right;
         bool is_leaf = false;
+
+        node_4(){
+            n_left = nullptr;
+            n_right = nullptr;
+        }
     };
 
-    inline void bvh_tree_build_job(hittable_list& list, node_4* node){
+    struct tree {
+        hittable* objects;
+        uint32_t obj_count;
+        node_4* root;
+
+        
+    };
+
+    inline void bvh_tree_build_job(tree* tree, node_4* node){
 
         aabb curr_content = list.get_aabb();
+        node->content = curr_content;
 
         if(list.objects.size() <= 4){
-            for(int i = 0; i < list.objects.size(); i++) { node->objects[i] = list.objects[i]; }
+            for(int i = 0; i < list.objects.size(); i++) { node->objects[i] = list.objects[i]; node->obj_count++;}
             node->is_leaf = true;
             return;
         }
-
-        node->content = curr_content;
 
         vec3 extent = node->content.max - node->content.min;
         int axis = 0; //0 = x, 1 = y, 2 = z
@@ -49,19 +62,29 @@ namespace bvh {
         }
         
         //create node and recursion
-        node_4* n1 = new node_4;
-        node_4* n2 = new node_4;
+        node_4* n1 = new node_4();
+        node_4* n2 = new node_4();
         node->n_left = n1;
         node->n_right = n2;
-        bvh_tree_build_job(h1, n1);
-        bvh_tree_build_job(h2, n2);
-
+        if(h1.objects.size()>0){
+            bvh_tree_build_job(h1, n1);
+        }else{
+            delete(n1);
+        }
+        if(h2.objects.size()>0){
+            bvh_tree_build_job(h2, n2);
+        }else{
+            delete(n2);
+        }
     }
 
-    inline node_4* construct_bvh_tree(hittable* world) {
+    inline node_4* construct_bvh_tree(hittable* world, tree* tree) {
         hittable_list* list = dynamic_cast<hittable_list*>(world);
-        node_4* root = new node_4;
-        bvh_tree_build_job(*list, root);
+        tree->objects = *list->objects.data();
+        tree->obj_count = list->objects.size();
+        node_4* root = new node_4();
+        tree->root = root;
+        bvh_tree_build_job(tree, root);
         return root;
 
     }
