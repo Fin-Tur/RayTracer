@@ -9,15 +9,31 @@ namespace bvh {
 
     struct node_4 {
         aabb content;
-        uint8_t obj_start = 0;
-        uint8_t obj_count = 0;
-        node_4* n_left; //int left_child + flache liste
+        uint32_t* objects;
+        uint32_t obj_count = 0;
+        node_4* n_left; //int left_child + flat list
         node_4* n_right;
         bool is_leaf = false;
+
+        tree* tree;
 
         node_4(){
             n_left = nullptr;
             n_right = nullptr;
+        }
+
+        aabb get_aabb(){
+            aabb box{point3{0, 0, 0}, point3{0, 0, 0}};
+            for(int i = 0; i < obj_count; i++){
+                box.include(tree->objects[objects[i]].get_aabb());
+            }
+            return box;
+        }
+
+        void free_node_4(){
+            delete[] objects;
+            delete(n_left);
+            delete(n_right);
         }
     };
 
@@ -29,13 +45,13 @@ namespace bvh {
         
     };
 
-    inline void bvh_tree_build_job(tree* tree, node_4* node){
+    inline void bvh_tree_build_job(node_4* node){
 
-        aabb curr_content = list.get_aabb();
+        aabb curr_content = node->get_aabb();
+
         node->content = curr_content;
 
-        if(list.objects.size() <= 4){
-            for(int i = 0; i < list.objects.size(); i++) { node->objects[i] = list.objects[i]; node->obj_count++;}
+        if(node->obj_count <= 4){
             node->is_leaf = true;
             return;
         }
@@ -46,18 +62,23 @@ namespace bvh {
         if (extent.z() > extent[axis]) axis = 2;
 
         //split lists
-        hittable_list h1;
-        hittable_list h2;
+        uint32_t* h1_obs = new uint32_t[node->obj_count];
+        uint32_t h1_obj_count = 0;
+        uint32_t* h2_obs = new uint32_t[node->obj_count];
+        uint32_t h2_obj_count = 0;
+
 
         const double split_pos = 0.5 * (node->content.min[axis] + node->content.max[axis]);
 
-        for(auto& obj : list.objects){
-            aabb ob = obj->get_aabb();
+        for(int i = 0; i < node->obj_count; ++i){
+            aabb ob = node->tree->objects[node->objects[i]].get_aabb();
             const double obj_center = 0.5 * (ob.min[axis] + ob.max[axis]);
             if (obj_center < split_pos) {
-                h1.add(obj);
+                h1_obs[h1_obj_count] = node->objects[i];
+                h1_obj_count++;
             } else {
-                h2.add(obj);
+                h2_obs[h2_obj_count] = node->objects[i];
+                h2_obj_count++;
             }
         }
         
@@ -66,14 +87,21 @@ namespace bvh {
         node_4* n2 = new node_4();
         node->n_left = n1;
         node->n_right = n2;
-        if(h1.objects.size()>0){
-            bvh_tree_build_job(h1, n1);
+        n1->objects = h1_obs;
+        n1->obj_count = h1_obj_count;
+        n2->objects = h2_obs;
+        n2->obj_count = h2_obj_count;
+
+        if(h1_obj_count>0){
+            bvh_tree_build_job(n1);
         }else{
+            n1->free_node_4();
             delete(n1);
         }
-        if(h2.objects.size()>0){
-            bvh_tree_build_job(h2, n2);
+        if(h2_obj_count>0){
+            bvh_tree_build_job(n2);
         }else{
+            n2->free_node_4();
             delete(n2);
         }
     }
@@ -84,7 +112,8 @@ namespace bvh {
         tree->obj_count = list->objects.size();
         node_4* root = new node_4();
         tree->root = root;
-        bvh_tree_build_job(tree, root);
+        root->tree = tree;
+        bvh_tree_build_job(root);
         return root;
 
     }
@@ -96,6 +125,7 @@ namespace bvh {
         if(root->n_right != nullptr){
             destroy_tree(root->n_right);
         }
+        delete[] root->objects;
         delete(root);
     }
     
